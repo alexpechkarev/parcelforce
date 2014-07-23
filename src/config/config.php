@@ -314,6 +314,15 @@
          */         
         'trailer_file_version_number'     => '02',
         
+        /**
+         * Fomat                - alphanumeric 
+         * Min/Max length       - 1 - 6
+         * Mandatory/Optional   - M
+         * Comment              - The total number of records present in the batch, 
+         *                          including the Header, Sender andTrailer Records.
+         */         
+        'trailer_record_count'            => 2,        
+        
         /*
         |-----------------------------------------------------------------------
         | Global Settings
@@ -329,12 +338,7 @@
         /**
          * File name prefix - supplied by ParcelForce
          */        
-        'fileName'                        => 'ABC9',
-        
-        /**
-         * File to store next consigment and file numbers
-         */        
-        'configFile'                      => 'config.txt',                  
+        'fileName'                        => 'ABC9',                
         
         /**
          * File number, start with 1 and increment thereafter

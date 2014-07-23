@@ -30,8 +30,9 @@
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
 
+use \Illuminate\Database\Eloquent\Model as Eloquent;
 
-class ConsignmentNumber extends Eloquent {
+class ConsNumber extends Eloquent {
 
 	/**
 	 * The database table used by the model.
@@ -46,6 +47,8 @@ class ConsignmentNumber extends Eloquent {
 	 * @var array
 	 */
 	protected $fillable = array('consnum');
+        
+        public $timestamps = false;
 
 
 }

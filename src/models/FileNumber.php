@@ -31,7 +31,7 @@
  */
 
 
-class ConsignmentNumber extends Eloquent {
+class FileNumber extends Eloquent {
 
 	/**
 	 * The database table used by the model.
@@ -46,6 +46,8 @@ class ConsignmentNumber extends Eloquent {
 	 * @var array
 	 */
 	protected $fillable = array('filenum');
+        
+        public  $timestamps = false;
 
 
 }

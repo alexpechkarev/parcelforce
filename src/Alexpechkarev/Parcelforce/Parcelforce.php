@@ -32,8 +32,9 @@
 namespace Alexpechkarev\Parcelforce;
 
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
+use ConsNumber;
+use FileNumber;
 
 class Parcelforce {
     
@@ -211,22 +212,6 @@ class Parcelforce {
     );
     
     
-    /*
-    |-----------------------------------------------------------------------
-    | Trailer Record – Type 9
-    |-----------------------------------------------------------------------
-    */     
-    protected $trailerRecord = array(
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1 - 6
-         * Mandatory/Optional   - M
-         * Comment              - The total number of records present in the batch, 
-         *                          including the Header, Sender andTrailer Records.
-         */         
-        'trailer_record_count'            => 2        
-    );
     
     /*
     |--------------------------------------------------------------------------
@@ -245,22 +230,23 @@ class Parcelforce {
         
        $this->config = $config;
        
-        $this->dateObj = Carbon::parse('tomorrow');
-        #$d = new Carbon();
-        #dd($this->dateObj->format("Y-m-d"));
-        #$date = $date = new DateTime('tomorrow', new DateTimeZone('Europe/London'));
-        #$this->collectionDate = $date->format("Y-m-d");  
-        #$this->collectionDate = '2014-07-04';    
+       $this->dateObj = Carbon::parse($this->config['collectionDate']);  
         
-        #$this->init();
+       $this->config['header_dispatch_date'] = $this->dateObj->format('Ymd');
         
-        $this->setupCheck();
+       #$this->init();
+        
+       $this->setup();
         
         
     }
     
-    
-    public function setupCheck(){
+    /**
+     * Perform necessary checks
+     * @return boolean
+     * @throws \RuntimeException
+     */
+    public function setup(){
         
         
         // Check if files directory has been created
@@ -274,38 +260,181 @@ class Parcelforce {
         endif;
         
         
+        // initialized fileNumber with database on first run
+        if( FileNumber::all()->count() === 0):
+            FileNumber::create(array('filenum' => $this->config['fileNumber'] ));
+        else:
+            $this->setFileName();
+        endif;
         
+        // initialized dr_consignment_number with database on first run
+        if( ConsNumber::all()->count() === 0):
+            ConsNumber::create(array('consnum' => $this->config['dr_consignment_number'] ));            
+        else:
+            $this->getConsignmentNumber();
+        endif;        
+        
+        
+        #$this->createFile();
+        #dd($this->config);
         
         return true;
     }
+    /***/
     
     
-    public function initConfigFile(){
+    public function init(){
         
-        // write to config.txt file initial settings
-        if (File::exists($this->config['filePath'].$this->config['configFile']) === false):
-            $bw = File::put(
-                                $this->config['filePath'].$this->config['configFile'], 
-                                json_encode(array(
-                                                "dr_consignment_number" => $this->config['dr_consignment_number'],
-                                                "fileumber"=>$this->config['fileNumber']
-                                            )
-                                )
-                            );
+        
             
-            if($bw === false):
-                throw new \RuntimeException('Unable to write to: '.$this->config['configFile']);
-            endif;
+            $this->setRecod();
             
-        else:
-            // read config.txt file and re-assign its values to config
-                array_merge($this->config, 
-                            json_decode(File::get($this->config['filePath'].$this->config['configFile']), true) );
-                dd($this->config);
-        endif;        
+            
+            $this->setFileName();
+            $this->generateFile();
+            $this->sendFile();        
+    }
+    
+   
+    
+    
+    /**
+     * Get file name
+     */
+    public function setFileName(){
+            $fn = FileNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
+            $this->config['fileNumber'] = $fn[0]['filenum'];
+            // pad number left with zeros
+            $num = (strlen((string)$fn[0]['filenum'])+4) - strlen((string)$fn[0]['filenum']);
+            //set file name
+            $this->config['fileName'].= str_pad($fn[0]['filenum'], $num, 0, STR_PAD_LEFT).'.tmp';  
+            
+            // incremnt file number for next run
+            $this->setFileNumber();
+    }
+    /***/  
+    
+    /**
+     * Get file name
+     */
+    public function setFileNumber(){   
+            FileNumber::create(array('filenum' => ++$this->config['fileNumber'] ));
+    }
+    /***/     
+   
+
+    
+    /**
+     * Get consignment number from databse and assign to config
+     * Format integer
+     * Max/Min - 6 
+     */
+    public function getConsignmentNumber(){
+        
+        $fn = ConsNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
+        $this->config['dr_consignment_number'] = $fn[0]['consnum'];
+        // set check digit for new consignment number
+        $this->setCheckDigit();
         
     }
     /***/
+       
+    
+    /**
+     * Set consignment number by incrementing it's value by 1 and store db
+     * Format integer
+     * Max/Min - 6 
+     */
+    public function setConsignmentNumber(){
+        ConsNumber::create(array('consnum' => ++$this->config['dr_consignment_number'] ));
+    }
+    /***/    
+    
+    
+    /**
+     * Generate Check Digit
+     * Thus, given a 6 digit number of 162738 the check digit calculation is as follows:
+
+            1)      1  x  4  =   4
+                    6  x  2  =  12
+                    2  x  3  =   6
+                    7  x  5  =  35
+                    3  x  9  =  27
+                    8  x  7  =  56
+
+            2)	4 + 12 + 6 + 35 + 27 + 56  =  140
+
+            3)	140  ¸  11  =  12  remainder 8
+
+            4)	11 - 8  =  3
+                 * 
+            5)	Check digit = 3
+     */
+    public function setCheckDigit(){
+        
+        $sum =      ($this->config['dr_consignment_number'][0] * 4) 
+                +   ($this->config['dr_consignment_number'][1] * 2) 
+                +   ($this->config['dr_consignment_number'][2] * 3) 
+                +   ($this->config['dr_consignment_number'][3] * 5) 
+                +   ($this->config['dr_consignment_number'][4] * 9) 
+                +   ($this->config['dr_consignment_number'][5] * 7) ;
+        
+        $rem = $sum % 11;
+        $checkdigit = 0;
+        
+        if((11 -$rem) == 10):
+            $checkdigit = 0;
+        elseif((11 - $rem) == 11):
+            $checkdigit = 5;
+        else:
+            $checkdigit = 11 - $rem;
+        endif;
+        
+        $this->config['dr_consisgnment_check_digit'] = $checkdigit;
+    }
+    /***/     
+    
+    /**
+     * Set hader
+     * @return string
+     */
+    public function getHeader(){
+        
+        return $this->config['header_record_type_indicator']
+                .'+'
+                .$this->config['header_file_version_number']
+                .'+'
+                .$this->config['header_file_type']                
+                .'+'
+                .$this->config['header_customer_account']
+                .'+'
+                .$this->config['header_generic_contract']
+                .'+'
+                .$this->config['header_bath_number']
+                .'+'
+                .$this->config['header_dispatch_date']
+                .'+'
+                .$this->config['header_dispatch_time']
+                .'+'
+                .$this->config['header_last_collection']
+                .'+';
+    }
+    /***/
+    
+    /**
+     * Get trailer footer
+     * @return type
+     */
+    public function getFooter(){
+        
+        return $this->config['trailer_record_type_indicator']
+                .'+'
+                .$this->config['trailer_file_version_number']
+                .'+'
+                .$this->config['trailer_record_count']
+                .'+';
+    }
+    /***/    
     
     
     /**
@@ -315,12 +444,12 @@ class Parcelforce {
      * @throws \RuntimeException
      */
     public function createFile(){
-                                  
-              
+                                          
         // write to the file
-        if (File::put($this->config['filePath'].$this->config['fileName'], $this->fileContent) === false):
+        if (File::put($this->config['filePath'].$this->config['fileName'], 
+                        $this->getHeader().$this->fileContent.$this->getFooter()) === false):
             throw new \RuntimeException('Unable to write to: '.$this->config['fileName']);
-        endif;
+        endif;         
         
         return true;
         
