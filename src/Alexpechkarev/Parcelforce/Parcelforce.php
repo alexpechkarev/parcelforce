@@ -148,24 +148,23 @@ class Parcelforce {
          * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
          */        
         "senderPaymentValue"=>'+'
-        
-        
-    );
+        );
     
 
     /*
     |-----------------------------------------------------------------------
     | Detail Record – Type 2 Specified at runtime
     |-----------------------------------------------------------------------
-    */     
-    protected $detailRecord = array(
+    */   
+    
+    protected $recordDetails = array(
         
         /**
          * Fomat                - delimiter requiried
          * Min/Max length       - 0
          * Comment              - data not requiried
          */         
-        'fillerField'          => '++',        
+        'fillerField'          => '+',        
         
         /**
          * Fomat                - alphanumeric 
@@ -297,7 +296,45 @@ class Parcelforce {
     
    
     
-    
+    public function setRecord(){
+        
+        $data = func_get_args();
+        if(!is_array($data) || count($data) < 1):
+            throw new \InvalidArgumentException("Invaild argument given. Expecting an array.");
+        endif;
+        
+//0+02+DSCC+ABC1234+A123456+0001+20100302+080000+170000+
+//1+02+PARCELFORCE WORLDWIDE+LYTHAM HOUSE+28 CALDECOTTE LAKE DRIVE+CALDECOTTE+++MILTON KEYNES+MK7 8LE++++++
+//2+02+AB1234567+SND++++SENDERS REFERENCE+0+++1++MR CUSTOMER+100 CUSTOMER SOLUTIONS STREET+++MILTON KEYNES+MK9 9AB+
+//9+02+4+
+        
+        
+        foreach($data as $key=>$val):
+            // merge with Sender Record array
+            $record = array_merge($this->senderRecord, $val); 
+            // check that mandatory fields specified [not null]
+            try{
+                array_count_values($record);
+            }catch(\ErrorException $e){
+                throw new \InvalidArgumentException("Mandatory field ". array_search(null, $record, true). " must not be NULL!");
+
+            }        
+            
+            $this->config['trailer_record_count']++;
+            $this->fileContent.= 
+                                $this->config['sender_record_type_indicator']
+                               .$this->recordDetails['fillerField']
+                               .$this->recordDetails['fillerField'];
+            
+        
+            
+        endforeach;
+        
+        dd($this->fileContent);
+    }
+
+
+
     /**
      * Get file name
      */
