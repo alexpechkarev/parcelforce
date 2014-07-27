@@ -132,165 +132,302 @@
         
         /*
         |-----------------------------------------------------------------------
-        | Sender Record – Type 1
+        | Sender Record – Type 1 - Collection details
         |-----------------------------------------------------------------------
         */
         
-        /**
-         * Fomat                - Alphanumeric 
-         * Min/Max length       - 1
-         * Mandatory/Optional   - M
-         * Comment              - Set to 1
-         */          
-        'sender_record_type_indicator'     => 1,
+        "collectionDetails" => array(
+            /**
+             * Fomat                - Alphanumeric 
+             * Min/Max length       - 1
+             * Mandatory/Optional   - M
+             * Comment              - Set to 1
+             */          
+            'sender_record_type_indicator'     => 1,
+
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 2
+             * Mandatory/Optional   - M
+             * Comment              - Set to '02'
+             */        
+            'sender_file_version_number'       => '02',
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1 - 18
+             * Mandatory/Optional   - M
+             * Comment              - Initialize with sender name
+             */         
+            "senderName"=>null, 
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1 - 24
+             * Mandatory/Optional   - M
+             * Comment              - Initialize with sender address line 1
+             */         
+            "senderAddress1"=>null, 
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 24
+             * Mandatory/Optional   - 0
+             */         
+            "senderAddress2"=>'+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 24
+             * Mandatory/Optional   - 0
+             */        
+            "senderAddress3"=>'+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 24
+             * Mandatory/Optional   - 0
+             */        
+            "senderAddress4"=>'+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 24
+             * Mandatory/Optional   - 0
+             */        
+            "senderAddress5"=>'+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1 - 18
+             * Mandatory/Optional   - M
+             * Comment              - Initialize with sender post town
+             */        
+            "senderPostTown"=>null,
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 6 - 8
+             * Mandatory/Optional   - M
+             * Comment              - Initialize with sender postcode
+             */          
+            "senderPostcode"=>null,
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 40
+             * Mandatory/Optional   - O
+             * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
+             */         
+            "senderContactName"=>'+', 
+
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 0 - 20
+             * Mandatory/Optional   - O
+             * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
+             */        
+            "senderContactNumber"=>'+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 28
+             * Mandatory/Optional   - O
+             * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
+             */        
+            "senderVehicle"=>'+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 20
+             * Mandatory/Optional   - O
+             * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
+             */        
+            "senderPaymentMethod"=>'+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 8
+             * Mandatory/Optional   - O
+             * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
+             */        
+            "senderPaymentValue"=>'+'            
+         ),
         
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 2
-         * Mandatory/Optional   - M
-         * Comment              - Set to '02'
-         */        
-        'sender_file_version_number'       => '02',
-        
-        /**
-         * Notes - sender record detail should be given at the class call and will be 
-         *          auto injected during file generation process.
-         */
+ 
         
         
         /*
         |-----------------------------------------------------------------------
-        | Detail Record – Type 2
+        | Detail Record – Type 2 - Delivery details
         |-----------------------------------------------------------------------
         */         
 
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1
-         * Mandatory/Optional   - M
-         * Comment              - Set to 2
-         */         
-        'dr_record_type_indicator'        => 2,
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 2
-         * Mandatory/Optional   - M
-         * Comment              - Set to '02'
-         */        
-        'dr_file_version_number'          => '02',
-        
-        /**
-         * Consignment number providede by ParcelForce in format 2 alpha and 7 numeric
-         * should be split into two parts 2 alpho and 7 numeric and entered below separately
-         * 
-         * dr_consignment_prefix_number = 2 alpha part
-         * dr_consignment_number        = 7 numeric part
-         * 
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 2
-         * Mandatory/Optional   - M
-         * Comment              - Format: 2 alpha
-         */        
-        'dr_consignment_prefix_number'    => 'AB',
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 7
-         * Mandatory/Optional   - M
-         * Comment              - Format: 7 numeric
-         */         
-        'dr_consignment_number'           => 123001,
-        
-        
-        /**
-         * Fomat                - alphanumeric  
-         * Min/Max length       - 1 - 4
-         * Mandatory/Optional   - M
-         * Comment              - Code relating to selected service
-         * 
-         * Parcelforce Service  Service ID
-         *  express09            S09
-         *  express10            S10
-         *  expressAM            S12
-         *  expressPM            SPM
-         *  express24            SND
-         *  express48            SUP
-         *  express48 large      SID
-         *  expresscollect       SMS
-         */         
-        'dr_service_id'                   => 'SND',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 4
-         * Mandatory/Optional   - O
-         * Comment              - Code indicating weekend handling requirements
-         * 
-         * Parcelforce Service      Service ID
-         *  Saturday delivery         ESAT
-         *  Saturday collection       ECSA
-         *  Sunday Collection         ECSU
-         * 
-         */         
-        'dr_weekend_handling_code'        => '+', 
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 1
-         * Mandatory/Optional   - M
-         * Comment              - Set to ‘1’ for SKEL Set to ‘0’ for DSCA & DSCC
-         */
-        'dr_location_id'                  => 0,
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1 - 30
-         * Mandatory/Optional   - M
-         * Comment              - Consignee name or business name
-         */        
-        'dr_business_name'                => 'CTR EUROPE',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1 - 30
-         * Mandatory/Optional   - M
-         * Comment              - Consignee address line 1
-         */                
-        'dr_delivert_address1'            => 'Business address line 1',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 30
-         * Mandatory/Optional   - O
-         * Comment              - Consignee address line 2
-         */                
-        'dr_delivert_address2'            => 'Business address line 2',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 30
-         * Mandatory/Optional   - O
-         * Comment              - Consignee address line 3
-         */                
-        'dr_delivert_address3'            => 'Business address line 3',   
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 30
-         * Mandatory/Optional   - O
-         * Comment              - Consignee address line 2
-         */                
-        'dr_delivert_post_town'          => 'Business post town',        
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 6 - 8
-         * Mandatory/Optional   - M
-         * Comment              - Outward and inward parts should be separated by a space
-         */        
-        'dr_delivery_postcode'            => 'AB1 2CD',
-        'dr_consisgnment_check_digit'     => 0,
+        "deliveryDetails" => array(
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1
+             * Mandatory/Optional   - M
+             * Comment              - Set to 2
+             */         
+            'dr_record_type_indicator'        => 2,
+
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 2
+             * Mandatory/Optional   - M
+             * Comment              - Set to '02'
+             */        
+            'dr_file_version_number'          => '02',
+
+            /**
+             * Consignment number providede by ParcelForce in format 2 alpha and 7 numeric
+             * should be split into two parts 2 alpho and 7 numeric and entered below separately
+             * 
+             * dr_consignment_prefix_number = 2 alpha part
+             * dr_consignment_number        = 7 numeric part
+             * 
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 2
+             * Mandatory/Optional   - M
+             * Comment              - Format: 2 alpha
+             */        
+            'dr_consignment_prefix_number'    => 'AB',
+
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 7
+             * Mandatory/Optional   - M
+             * Comment              - Format: 7 numeric
+             */         
+            'dr_consignment_number'           => 123001,
+
+
+            /**
+             * Fomat                - alphanumeric  
+             * Min/Max length       - 1 - 4
+             * Mandatory/Optional   - M
+             * Comment              - Code relating to selected service
+             * 
+             * Parcelforce Service  Service ID
+             *  express09            S09
+             *  express10            S10
+             *  expressAM            S12
+             *  expressPM            SPM
+             *  express24            SND
+             *  express48            SUP
+             *  express48 large      SID
+             *  expresscollect       SMS
+             */         
+            'dr_service_id'                   => 'SND',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 4
+             * Mandatory/Optional   - O
+             * Comment              - Code indicating weekend handling requirements
+             * 
+             * Parcelforce Service      Service ID
+             *  Saturday delivery         ESAT
+             *  Saturday collection       ECSA
+             *  Sunday Collection         ECSU
+             * 
+             */         
+            'dr_weekend_handling_code'        => '+', 
+            
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 14
+             * Mandatory/Optional   - O
+             * Comment              - Customer reference that can be associated with each collection record
+             */        
+            "senderReference"=>'SENDER REFERENCE',            
+
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 1
+             * Mandatory/Optional   - M
+             * Comment              - Set to ‘1’ for SKEL Set to ‘0’ for DSCA & DSCC
+             */
+            'dr_location_id'                  => 0,
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1 - 30
+             * Mandatory/Optional   - M
+             * Comment              - Consignee name or business name
+             */        
+            'dr_business_name'                => null,
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1 - 30
+             * Mandatory/Optional   - M
+             * Comment              - Consignee address line 1
+             */                
+            'dr_delivery_address1'            => null,
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 30
+             * Mandatory/Optional   - O
+             * Comment              - Consignee address line 2
+             */                
+            'dr_delivery_address2'            => '+',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 30
+             * Mandatory/Optional   - O
+             * Comment              - Consignee address line 3
+             */                
+            'dr_delivery_address3'            => '+',   
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 30
+             * Mandatory/Optional   - O
+             * Comment              - Consignee address line 2
+             */                
+            'dr_delivery_post_town'          => '+',        
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 6 - 8
+             * Mandatory/Optional   - M
+             * Comment              - Outward and inward parts should be separated by a space
+             */        
+            'dr_delivery_postcode'            => null,
+            'dr_consisgnment_check_digit'     => 0,
+            
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 0 - 8
+             * Mandatory/Optional   - O
+             * Comment              - Specific Contract Number under which despatch is sent.
+             *                         (Mandatory if no Generic Contract Numberis supplied in the Header Record (field 5))
+             */        
+            "contractNumber"=>'+',  
+
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 3 - 8
+             * Mandatory/Optional   - O
+             * Comment              - Expressed in 100ths of a kilogram. 
+             *                          For example 3.5kg should be populated as 350         
+             */        
+            "consignmentWeight"=>'+',  
+
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 3 - 7
+             * Mandatory/Optional   - M
+             * Comment              - Number of physical packages in the consignment
+             */        
+            "numberOfItems"=>1,             
+         
+          ),
         
         /*
         |-----------------------------------------------------------------------
@@ -329,6 +466,12 @@
         |-----------------------------------------------------------------------
         */        
         
+        /**
+         * Fomat                - delimiter requiried
+         * Min/Max length       - 0
+         * Comment              - data not requiried
+         */         
+        'delimiterChar'          => '+',         
         
         /**
          * Location consignment files

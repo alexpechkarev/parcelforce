@@ -33,190 +33,20 @@ namespace Alexpechkarev\Parcelforce;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use ConsNumber;
 use FileNumber;
+use Illuminate\Support\Collection;
 
 class Parcelforce {
-    
-    
-   
-    
-    protected $config;
-        
-    /*    
-    |-----------------------------------------------------------------------
-    | Sender Record – Type 1 - Will be set at runtime
-    |-----------------------------------------------------------------------
-    */    
-    protected $senderRecord = array(
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1 - 18
-         * Mandatory/Optional   - M
-         * Comment              - Initialize with sender name
-         */         
-        "senderName"=>null, 
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1 - 24
-         * Mandatory/Optional   - M
-         * Comment              - Initialize with sender address line 1
-         */         
-        "senderAddress1"=>null, 
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 24
-         * Mandatory/Optional   - 0
-         */         
-        "senderAddress2"=>'+',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 24
-         * Mandatory/Optional   - 0
-         */        
-        "senderAddress3"=>'+',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 24
-         * Mandatory/Optional   - 0
-         */        
-        "senderAddress4"=>'+',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 24
-         * Mandatory/Optional   - 0
-         */        
-        "senderAddress5"=>'+',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1 - 18
-         * Mandatory/Optional   - M
-         * Comment              - Initialize with sender post town
-         */        
-        "senderPostTown"=>null,
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 6 - 8
-         * Mandatory/Optional   - M
-         * Comment              - Initialize with sender postcode
-         */          
-        "senderPostcode"=>null,
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 40
-         * Mandatory/Optional   - O
-         * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
-         */         
-        "senderContactName"=>'+', 
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 0 - 20
-         * Mandatory/Optional   - O
-         * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
-         */        
-        "senderContactNumber"=>'+',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 28
-         * Mandatory/Optional   - O
-         * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
-         */        
-        "senderVehicle"=>'+',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 20
-         * Mandatory/Optional   - O
-         * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
-         */        
-        "senderPaymentMethod"=>'+',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 8
-         * Mandatory/Optional   - O
-         * Comment              - Field and separator not used in SKEL files. Only relevant for DSCC and DSCA
-         */        
-        "senderPaymentValue"=>'+'
-        );
-    
 
-    /*
-    |-----------------------------------------------------------------------
-    | Detail Record – Type 2 Specified at runtime
-    |-----------------------------------------------------------------------
-    */   
-    
-    protected $recordDetails = array(
-        
-        /**
-         * Fomat                - delimiter requiried
-         * Min/Max length       - 0
-         * Comment              - data not requiried
-         */         
-        'fillerField'          => '+',        
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 14
-         * Mandatory/Optional   - O
-         * Comment              - Customer reference that can be associated with each collection record
-         */        
-        "senderReference"=>'+',
-
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 0 - 8
-         * Mandatory/Optional   - O
-         * Comment              - Specific Contract Number under which despatch is sent.
-         *                         (Mandatory if no Generic Contract Numberis supplied in the Header Record (field 5))
-         */        
-        "contractNumber"=>'+',  
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 3 - 8
-         * Mandatory/Optional   - O
-         * Comment              - Expressed in 100ths of a kilogram. 
-         *                          For example 3.5kg should be populated as 350         
-         */        
-        "consignmentWeight"=>'+',  
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 3 - 7
-         * Mandatory/Optional   - M
-         * Comment              - Number of physical packages in the consignment
-         */        
-        "numberOfItems"=>1,  
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 1
-         * Mandatory/Optional   - M
-         * Comment              - Check digit
-         */        
-        'check_digit'     => 0        
-        
-    );
-    
-    
-    
     /*
     |--------------------------------------------------------------------------
     | Global
     |--------------------------------------------------------------------------
     */    
+    protected $config;    
     protected $fileContent;
     protected $dateObj;
    
@@ -233,13 +63,21 @@ class Parcelforce {
         
        $this->config['header_dispatch_date'] = $this->dateObj->format('Ymd');
         
-       #$this->init();
-        
        $this->setup();
-        
+       
+       $this->setHeader(); 
+       
         
     }
     
+    public function process($data){
+        $this->setRecord($data);
+        $this->setFooter();
+        $this->createFile();
+        dd($this->fileContent);
+    }
+
+
     /**
      * Perform necessary checks
      * @return boolean
@@ -282,72 +120,187 @@ class Parcelforce {
     /***/
     
     
-    public function init(){
-        
-        
-            
-            $this->setRecod();
-            
-            
-            $this->setFileName();
-            $this->generateFile();
-            $this->sendFile();        
-    }
-    
    
     
     public function setRecord(){
         
-        $data = func_get_args();
-        if(!is_array($data) || count($data) < 1):
-            throw new \InvalidArgumentException("Invaild argument given. Expecting an array.");
+        if(func_num_args() != 1):
+            throw new \InvalidArgumentException("Invaild number of arguments given. Expecting an array.");
         endif;
+        
+        $data = func_get_args();  
         
 //0+02+DSCC+ABC1234+A123456+0001+20100302+080000+170000+
 //1+02+PARCELFORCE WORLDWIDE+LYTHAM HOUSE+28 CALDECOTTE LAKE DRIVE+CALDECOTTE+++MILTON KEYNES+MK7 8LE++++++
 //2+02+AB1234567+SND++++SENDERS REFERENCE+0+++1++MR CUSTOMER+100 CUSTOMER SOLUTIONS STREET+++MILTON KEYNES+MK9 9AB+
 //9+02+4+
+        $cc = new Collection($data[0]);
         
-        
-        foreach($data as $key=>$val):
-            // merge with Sender Record array
-            $record = array_merge($this->senderRecord, $val); 
+        $cc->each(function($item){
+           
+            // merge values with default Collection Details array
+            $senderDetails = array_merge($this->config['collectionDetails'], $item['collectionDetails']);
+            
+            
             // check that mandatory fields specified [not null]
             try{
-                array_count_values($record);
+                array_count_values($senderDetails);
             }catch(\ErrorException $e){
-                throw new \InvalidArgumentException("Mandatory field ". array_search(null, $record, true). " must not be NULL!");
+                throw new \InvalidArgumentException("Mandatory field ". array_search(null, $senderDetails, true). " must not be NULL!");
 
-            }        
+            }            
+
+            // prepend fields with delimiter characters when needed
+            $this->addDelimiter($senderDetails, $item['collectionDetails']);
             
+            //merge with default delivery details
+            $deliveryDetails = array_merge($this->config['deliveryDetails'], $item['deliveryDetails']); 
+            // check that mandatory fields specified [not null]
+            try{
+                array_count_values($deliveryDetails);
+            }catch(\ErrorException $e){
+                throw new \InvalidArgumentException("Mandatory field ". array_search(null, $deliveryDetails, true). " must not be NULL!");
+
+            }             
+            
+            // prepend fields with delimiter characters when needed
+            $this->addDelimiter($deliveryDetails, $item['deliveryDetails']);
+            
+            
+            // Setting sender record - collect consignment from
+            
+            // increment record count
             $this->config['trailer_record_count']++;
             $this->fileContent.= 
-                                $this->config['sender_record_type_indicator']
-                               .$this->recordDetails['fillerField']
-                               .$this->recordDetails['fillerField'];
+                                $senderDetails['sender_record_type_indicator']
+                               .$this->config['delimiterChar']
+                               .$senderDetails['sender_file_version_number']
+                               .$senderDetails['senderName']
+                               .$senderDetails['senderAddress1']
+                               .$senderDetails['senderAddress2']
+                               .$senderDetails['senderAddress3']                               
+                               .$senderDetails['senderAddress4']
+                               .$senderDetails['senderAddress5']
+                               .$senderDetails['senderPostTown']
+                               .$senderDetails['senderPostcode']
+                               .$senderDetails['senderContactName']
+                               .$senderDetails['senderContactNumber']
+                               .$senderDetails['senderPaymentMethod']
+                               .$senderDetails['senderPaymentValue']
+                               .$senderDetails['senderVehicle']
+                               .$senderDetails['senderVehicle']
+                               ."\r\n";
+             
+            // Setting detail record - deliver consignment to
             
+            // increment record count            
+            $this->config['trailer_record_count']++;
+
+            $this->fileContent.= 
+                                $deliveryDetails['dr_record_type_indicator']
+                               .$this->config['delimiterChar']
+                               .$deliveryDetails['dr_file_version_number']
+                               .$this->config['delimiterChar']
+                               .$deliveryDetails['dr_consignment_prefix_number']
+                               .$deliveryDetails['dr_consignment_number']
+                               .$deliveryDetails['dr_consisgnment_check_digit']
+                               .$this->config['delimiterChar']
+                               .$deliveryDetails['dr_service_id']
+                               .$deliveryDetails['dr_weekend_handling_code']
+                               .$this->config['delimiterChar']
+                               .$this->config['delimiterChar']
+                               .$deliveryDetails['senderReference']
+                               .$this->config['delimiterChar']                    
+                               .$deliveryDetails['dr_location_id']
+                               .$this->config['delimiterChar']                    
+                               .$deliveryDetails['contractNumber']
+                               .$this->config['delimiterChar']                     
+                               .$deliveryDetails['numberOfItems']
+                               .$deliveryDetails['consignmentWeight']
+                               .$deliveryDetails['dr_business_name']
+                               .$deliveryDetails['dr_delivery_address1']
+                               .$deliveryDetails['dr_delivery_address2']
+                               .$deliveryDetails['dr_delivery_address3']
+                               .$deliveryDetails['dr_delivery_post_town']
+                               .$deliveryDetails['dr_delivery_postcode']
+                               .$this->config['delimiterChar'] 
+                               ."\r\n";            
+                        
+        });
         
-            
-        endforeach;
         
-        dd($this->fileContent);
+        
+        
     }
+    /***/
 
+    
+    /**
+     * Prepend array values with delimiter character when needed
+     * @param array $arr - array of values
+     * @param array $master - config array
+     */
+    protected function addDelimiter(&$arr, &$master){
+            
+            array_walk($arr, function(&$it) use($master){                
+                if(in_array($it, $master) && $it != '+'):
+                    $it =  $this->config['delimiterChar'].$it;
+                endif;
+            }); 
+            
+    }
+    /***/
 
+    /**
+     * Droping and re-creating table to store file number
+     */
+    protected function resetFileNumberTable(){
+        
+        // drop file number table
+        Schema::drop('tbl_parcelforce_filenum');
+        // creat table
+        Schema::create('tbl_parcelforce_filenum', function(Blueprint $table)
+        {
+            $table->increments('id');
+            $table->integer('filenum');
+        });
+        
+        FileNumber::create(array('filenum' => $deliveryDetails['fileNumber'] ));        
+    }
+    /***/
 
     /**
      * Get file name
+     * Also set batch number
      */
     public function setFileName(){
-            $fn = FileNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
-            $this->config['fileNumber'] = $fn[0]['filenum'];
-            // pad number left with zeros
-            $num = (strlen((string)$fn[0]['filenum'])+4) - strlen((string)$fn[0]['filenum']);
-            //set file name
-            $this->config['fileName'].= str_pad($fn[0]['filenum'], $num, 0, STR_PAD_LEFT).'.tmp';  
             
+            $incrementFlag = true;
+            $fn = FileNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
+            
+            // reset file and batch numbers to 1 when reatched 9999
+            if($fn[0]['filenum'] == 9999):
+                $fn[0]['filenum'] = 1;
+                $incrementFlag = false;
+                $this->resetFileNumberTable();
+            endif;
+            
+            $this->config['fileNumber']         = $fn[0]['filenum'];
+            // pad number left with zeros and set file name
+            $num = (strlen((string)$fn[0]['filenum'])+4) - strlen((string)$fn[0]['filenum']);
+            $this->config['fileName'].= str_pad($fn[0]['filenum'], $num, 0, STR_PAD_LEFT).'.tmp';
+            
+            /**
+             * Unique number per batch, to be created by the source system 
+             * Start at 1 and increment by 1 per batch After 9999 is reached, restart at 1
+             */
+            // pad number left with zeros and set file name
+            $num = (strlen((string)$fn[0]['filenum'])+4) - strlen((string)$fn[0]['filenum']);
+            $this->config['header_bath_number'] = str_pad($fn[0]['filenum'], $num, 0, STR_PAD_LEFT);            
+          
             // incremnt file number for next run
-            $this->setFileNumber();
+            $this->setFileNumber(); 
+            
     }
     /***/  
     
@@ -372,6 +325,9 @@ class Parcelforce {
         $this->config['dr_consignment_number'] = $fn[0]['consnum'];
         // set check digit for new consignment number
         $this->setCheckDigit();
+        
+        // increment number for next call
+        $this->setConsignmentNumber();
         
     }
     /***/
@@ -433,43 +389,42 @@ class Parcelforce {
     
     /**
      * Set hader
-     * @return string
      */
-    public function getHeader(){
+    public function setHeader(){
         
-        return $this->config['header_record_type_indicator']
-                .'+'
+        $this->fileContent = $this->config['header_record_type_indicator']
+                .$this->config['delimiterChar']
                 .$this->config['header_file_version_number']
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['header_file_type']                
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['header_customer_account']
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['header_generic_contract']
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['header_bath_number']
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['header_dispatch_date']
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['header_dispatch_time']
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['header_last_collection']
-                .'+';
+                .$this->config['delimiterChar']
+                ."\r\n";
     }
     /***/
     
     /**
-     * Get trailer footer
-     * @return type
+     * Set trailer footer
      */
-    public function getFooter(){
+    public function setFooter(){
         
-        return $this->config['trailer_record_type_indicator']
-                .'+'
+        $this->fileContent.= $this->config['trailer_record_type_indicator']
+                .$this->config['delimiterChar']
                 .$this->config['trailer_file_version_number']
-                .'+'
+                .$this->config['delimiterChar']
                 .$this->config['trailer_record_count']
-                .'+';
+                .$this->config['delimiterChar'];
     }
     /***/    
     
@@ -483,8 +438,7 @@ class Parcelforce {
     public function createFile(){
                                           
         // write to the file
-        if (File::put($this->config['filePath'].$this->config['fileName'], 
-                        $this->getHeader().$this->fileContent.$this->getFooter()) === false):
+        if (File::put($this->config['filePath'].$this->config['fileName'], $this->fileContent) === false):
             throw new \RuntimeException('Unable to write to: '.$this->config['fileName']);
         endif;         
         

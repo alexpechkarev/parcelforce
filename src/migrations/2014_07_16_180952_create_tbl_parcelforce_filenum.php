@@ -26,10 +26,7 @@ class CreateTblParcelforceFilenum extends Migration {
 	 */
 	public function down()
 	{
-		Schema::table('tbl_parcelforce_filenum', function(Blueprint $table)
-		{
-			//
-		});
+		Schema::drop('tbl_parcelforce_filenum');
 	}
 
 }
