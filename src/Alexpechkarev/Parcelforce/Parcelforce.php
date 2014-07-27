@@ -35,9 +35,9 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Collection;
 use ConsNumber;
 use FileNumber;
-use Illuminate\Support\Collection;
 
 class Parcelforce {
 
@@ -74,6 +74,7 @@ class Parcelforce {
         $this->setRecord($data);
         $this->setFooter();
         $this->createFile();
+        
         dd($this->fileContent);
     }
 
@@ -110,10 +111,7 @@ class Parcelforce {
         else:
             $this->getConsignmentNumber();
         endif;        
-        
-        
-        #$this->createFile();
-        #dd($this->config);
+       
         
         return true;
     }
