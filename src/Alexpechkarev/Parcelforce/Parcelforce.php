@@ -263,7 +263,7 @@ class Parcelforce {
             $table->integer('filenum');
         });
         
-        FileNumber::create(array('filenum' => $deliveryDetails['fileNumber'] ));        
+        FileNumber::create(array('filenum' => $this->config['fileNumber'] ));        
     }
     /***/
 
@@ -276,7 +276,7 @@ class Parcelforce {
             $incrementFlag = true;
             $fn = FileNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
             
-            // reset file and batch numbers to 1 when reatched 9999
+            // reset file and batch numbers to 1 when reached 9999
             if($fn[0]['filenum'] == 9999):
                 $fn[0]['filenum'] = 1;
                 $incrementFlag = false;
