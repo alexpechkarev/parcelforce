@@ -496,7 +496,35 @@
         /**
          * Time zone - defauklt Europe/London
          */
-        'timeZone'                        => 'Europe/London'
+        'timeZone'                        => 'Europe/London',
+        
+        /**
+         * FTP Host
+         */
+        'ftpHost'                        => 'FTP_HOST',    
+            
+        
+        /**
+         * FTP User name
+         */
+        'ftpUser'                        => 'USERNAME',        
+        
+        /**
+         * FTP Password
+         */
+        'ftpPass'                        => 'PASSWORD',        
+        
+        /**
+         * FTP Upload Path
+         */
+        'ftpUploadPath'                 => '/upload/path',                
+        
+        /**
+         * FTP Location Path
+         * Parcelforce requires moving files to another path after upload
+         */
+        'ftpLocationPath'                => '/location/path',                        
+        
        
     );      
 

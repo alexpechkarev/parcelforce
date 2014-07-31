@@ -46,9 +46,13 @@ class Parcelforce {
     | Global
     |--------------------------------------------------------------------------
     */    
-    protected $config;    
+    protected $config;  
+    
     protected $fileContent;
+    
     protected $dateObj;
+    
+    protected $ftp_conn;
    
     
     
@@ -74,6 +78,7 @@ class Parcelforce {
         $this->setRecord($data);
         $this->setFooter();
         $this->createFile();
+        $this->uploadFile();
         
         dd($this->fileContent);
     }
@@ -444,5 +449,39 @@ class Parcelforce {
         
     }
     /***/
+    
+    
+    public function uploadFile(){
+        
+        
+        $this->ftp_conn = ftp_connect($this->config['ftpHost'], 21);
+        
+        if(empty($this->ftp_conn)):
+            throw new \RuntimeException("Unable to connect to FTP - ".$this->config['ftpHost']);
+        endif;
+        
+        // send access parameters
+        
+         if(ftp_login($this->ftp_conn, $this->config['ftpUser'], $this->config['ftpPass'])  === false):
+                 throw new \RuntimeException("Unable to FTP login with - ".$this->config['ftpHost']);
+         endif;
+                 
+         // turn passive mode on
+         ftp_pasv($this->conn_id, true);
+
+         if( ftp_put($this->conn_id, $this->ftp_path."/".$local_file, $file_path.$local_file, FTP_ASCII)){
+
+             error_log("File has been uploaded");
+                 $info = pathinfo($local_file);
+                 $new_file_name = $info['filename'];
+                 if(ftp_rename($this->conn_id, $this->ftp_path."/".$local_file, $this->ftp_path."/".$new_file_name)):
+                     $rsp = TRUE;
+                 error_log("File has been renamed");
+                 endif;
+         }else{
+
+             error_log("Error uploading file.");
+         }        
+    }
     
 }
