@@ -30,19 +30,56 @@
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
 
-use Illuminate\Support\Facades\Config;
 
-class ParcelforceTest  extends TestCase{    
+use Illuminate\Support\Facades\Config;
+use Alexpechkarev\Parcelforce\Parcelforce;
+use Carbon\Carbon;
+
+class ParcelforceTest extends TestCase{    
     
     
     protected $pf;
+    protected $config;
     
     public function setUp() {
-        
-        $this->pf = new \Alexpechkarev\Parcelforce\Parcelforce(Config('parcelforce'));
+        parent::setUp();
+        $this->pf = new Parcelforce(Config::get('parcelforce::config'));
+        $this->config = Config::get('parcelforce::config');
     }
     
-    public function testOne(){
-        $this->assertTrue(true);
+    /**
+     * Instantiate Parcelforce class
+     * @test
+     */
+    public function test_is_instantiable(){
+        $this->assertInstanceOf('Alexpechkarev\Parcelforce\Parcelforce', $this->pf);
     }
+    /***/
+    
+    
+    
+    /**
+     * Is collection date set in config file
+     * Is Parcelforce class has property dateObj
+     * Is cillectionDate is not NULL
+     * @test
+     * @uses Carbon 
+     */
+    public function test_date_object_from_config(){
+        $this->assertArrayHasKey('collectionDate', $this->config); 
+        $this->assertNotNull($this->config['collectionDate']);
+        $this->assertClassHasAttribute("dateObj", 'Alexpechkarev\Parcelforce\Parcelforce');
+    }
+    /***/
+    
+    /**
+     * Testing package setup method
+     *
+     * @test
+     * @return true
+     */
+    public function test_verify_package_setup(){
+        $this->assertTrue($this->pf->setup());
+    }
+    /***/
 }

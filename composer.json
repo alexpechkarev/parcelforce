@@ -15,7 +15,8 @@
     "autoload": {
 		"classmap": [
 			"src/models",
-                        "src/migrations"
+                        "src/migrations",
+                        "tests/"
 		],        
         "psr-0": {
             "Alexpechkarev\\Parcelforce": "src/"
