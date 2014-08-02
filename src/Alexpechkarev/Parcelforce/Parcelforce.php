@@ -257,7 +257,7 @@ class Parcelforce {
      * @param array $arr - array of values
      * @param array $master - config array
      */
-    protected function addDelimiter(&$arr, &$master){
+    public function addDelimiter(&$arr, &$master){
             
             array_walk($arr, function(&$it) use($master){                
                 if(in_array($it, $master) && $it != '+'):

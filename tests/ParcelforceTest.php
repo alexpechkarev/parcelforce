@@ -82,4 +82,17 @@ class ParcelforceTest extends TestCase{
         $this->assertTrue($this->pf->setup());
     }
     /***/
+    
+    /**
+     * Test addDelimiter method
+     * @test
+     */
+    public function test_add_delimiter(){
+        $arr1 = array("foo"=>"bar", "baz"=>"doo");
+        $arr2 = array("foo"=>"bar", "baz"=>"doo");
+        $this->pf->addDelimiter($arr1, $arr2);
+        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['foo']);
+        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['baz']);
+    }
+    /***/
 }
