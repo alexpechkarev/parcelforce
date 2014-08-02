@@ -70,29 +70,9 @@ class Parcelforce {
        
         
     }
-    
-    
-    /**
-     * Initiate process
-     * - generate file content
-     * - generate footer content
-     * - create consignment file 
-     * - upload file
-     * @param array $data - array of data
-     */
-    public function process($data){
-        $this->setRecord($data);
-        $this->setFooter();
-        $this->createFile();
-        $this->uploadFile();
-        
-        dd($this->fileContent);
-        
-        return true;
-    }
     /***/
-
-
+    
+    
     /**
      * Perform necessary checks
      * @return boolean
@@ -129,11 +109,37 @@ class Parcelforce {
         
         return true;
     }
+    /***/    
+    
+    
+    /**
+     * Initiate process
+     * - generate file content
+     * - generate footer content
+     * - create consignment file 
+     * - upload file
+     * @param array $data - array of data
+     */
+    public function process($data){
+        $this->setRecord($data);
+        $this->setFooter();
+        $this->createFile();
+        $this->uploadFile();
+        
+        dd($this->fileContent);
+        
+        return true;
+    }
     /***/
-    
-    
+
    
     
+   
+    /**
+     * Generating file content based on the given data
+     * 
+     * @throws \InvalidArgumentException
+     */
     public function setRecord(){
         
         if(func_num_args() != 1):
