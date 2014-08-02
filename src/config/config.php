@@ -357,7 +357,7 @@
              * Mandatory/Optional   - M
              * Comment              - Consignee name or business name
              */        
-            'dr_business_name'                => null,
+            'receiverName'                => null,
 
             /**
              * Fomat                - alphanumeric 
@@ -365,7 +365,7 @@
              * Mandatory/Optional   - M
              * Comment              - Consignee address line 1
              */                
-            'dr_delivery_address1'            => null,
+            'receiverAddress1'            => null,
 
             /**
              * Fomat                - alphanumeric 
@@ -373,7 +373,7 @@
              * Mandatory/Optional   - O
              * Comment              - Consignee address line 2
              */                
-            'dr_delivery_address2'            => '+',
+            'receiverAddress2'            => '+',
 
             /**
              * Fomat                - alphanumeric 
@@ -381,7 +381,7 @@
              * Mandatory/Optional   - O
              * Comment              - Consignee address line 3
              */                
-            'dr_delivery_address3'            => '+',   
+            'receiverAddress3'            => '+',   
 
             /**
              * Fomat                - alphanumeric 
@@ -389,7 +389,7 @@
              * Mandatory/Optional   - O
              * Comment              - Consignee address line 2
              */                
-            'dr_delivery_post_town'          => '+',        
+            'receiverPostTown'          => '+',        
 
             /**
              * Fomat                - alphanumeric 
@@ -397,7 +397,14 @@
              * Mandatory/Optional   - M
              * Comment              - Outward and inward parts should be separated by a space
              */        
-            'dr_delivery_postcode'            => null,
+            'receiverPostcode'            => null,
+            
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 1
+             * Mandatory/Optional   - M
+             * Comment              - Generated on the server based on given algorithm
+             */            
             'dr_consisgnment_check_digit'     => 0,
             
 
@@ -500,8 +507,10 @@
         
         /**
          * FTP Host
+         * 
+         * @example use ftp.myhostaddress.net
          */
-        'ftpHost'                        => 'FTP_HOST',    
+        'ftpHost'                        => 'ftp.myhost.co.uk',             
             
         
         /**
@@ -517,13 +526,13 @@
         /**
          * FTP Upload Path
          */
-        'ftpUploadPath'                 => '/upload/path',                
+        'ftpUploadPath'                  => '/upload/path',   
         
         /**
          * FTP Location Path
          * Parcelforce requires moving files to another path after upload
          */
-        'ftpLocationPath'                => '/location/path',                        
+        'ftpLocationPath'                => '/location/path',         
         
        
     );      

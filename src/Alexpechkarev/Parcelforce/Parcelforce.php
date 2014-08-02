@@ -52,7 +52,7 @@ class Parcelforce {
     
     protected $dateObj;
     
-    protected $ftp_conn;
+    protected $ftpConn;
    
     
     
@@ -61,19 +61,25 @@ class Parcelforce {
      */
    public function __construct($config) {
         
-       $this->config = $config;
-       
-       $this->dateObj = Carbon::parse($this->config['collectionDate']);  
-        
+       $this->config = $config;       
+       $this->dateObj = Carbon::parse($this->config['collectionDate']);          
        $this->config['header_dispatch_date'] = $this->dateObj->format('Ymd');
         
-       $this->setup();
-       
+       $this->setup();       
        $this->setHeader(); 
        
         
     }
     
+    
+    /**
+     * Initiate process
+     * - generate file content
+     * - generate footer content
+     * - create consignment file 
+     * - upload file
+     * @param array $data - array of data
+     */
     public function process($data){
         $this->setRecord($data);
         $this->setFooter();
@@ -81,7 +87,10 @@ class Parcelforce {
         $this->uploadFile();
         
         dd($this->fileContent);
+        
+        return true;
     }
+    /***/
 
 
     /**
@@ -132,12 +141,11 @@ class Parcelforce {
         endif;
         
         $data = func_get_args();  
-        
-//0+02+DSCC+ABC1234+A123456+0001+20100302+080000+170000+
-//1+02+PARCELFORCE WORLDWIDE+LYTHAM HOUSE+28 CALDECOTTE LAKE DRIVE+CALDECOTTE+++MILTON KEYNES+MK7 8LE++++++
-//2+02+AB1234567+SND++++SENDERS REFERENCE+0+++1++MR CUSTOMER+100 CUSTOMER SOLUTIONS STREET+++MILTON KEYNES+MK9 9AB+
-//9+02+4+
         $cc = new Collection($data[0]);
+        
+        if($cc->count() < 1):
+            throw new \InvalidArgumentException("Invaild collection data.");
+        endif;
         
         $cc->each(function($item){
            
@@ -220,12 +228,12 @@ class Parcelforce {
                                .$this->config['delimiterChar']                     
                                .$deliveryDetails['numberOfItems']
                                .$deliveryDetails['consignmentWeight']
-                               .$deliveryDetails['dr_business_name']
-                               .$deliveryDetails['dr_delivery_address1']
-                               .$deliveryDetails['dr_delivery_address2']
-                               .$deliveryDetails['dr_delivery_address3']
-                               .$deliveryDetails['dr_delivery_post_town']
-                               .$deliveryDetails['dr_delivery_postcode']
+                               .$deliveryDetails['receiverName']
+                               .$deliveryDetails['receiverAddress1']
+                               .$deliveryDetails['receiverAddress2']
+                               .$deliveryDetails['receiverAddress3']
+                               .$deliveryDetails['receiverPostTown']
+                               .$deliveryDetails['receiverPostcode']
                                .$this->config['delimiterChar'] 
                                ."\r\n";            
                         
@@ -450,38 +458,48 @@ class Parcelforce {
     }
     /***/
     
-    
+    /**
+     * Uploading file to FTP
+     * 
+     * @throws \RuntimeException
+     */
     public function uploadFile(){
         
+        // establish connection
+        $this->ftpConn = ftp_connect($this->config['ftpHost']);
         
-        $this->ftp_conn = ftp_connect($this->config['ftpHost'], 21);
         
-        if(empty($this->ftp_conn)):
+        if(empty($this->ftpConn)):
             throw new \RuntimeException("Unable to connect to FTP - ".$this->config['ftpHost']);
         endif;
-        
-        // send access parameters
-        
-         if(ftp_login($this->ftp_conn, $this->config['ftpUser'], $this->config['ftpPass'])  === false):
-                 throw new \RuntimeException("Unable to FTP login with - ".$this->config['ftpHost']);
+
+        // attempt login
+         if(ftp_login($this->ftpConn, $this->config['ftpUser'], $this->config['ftpPass']) === false):
+                 throw new \RuntimeException("Unable to FTP login with - ".$this->config['ftpUser']);
          endif;
                  
          // turn passive mode on
-         ftp_pasv($this->conn_id, true);
-
-         if( ftp_put($this->conn_id, $this->ftp_path."/".$local_file, $file_path.$local_file, FTP_ASCII)){
-
-             error_log("File has been uploaded");
-                 $info = pathinfo($local_file);
+         ftp_pasv($this->ftpConn, true);
+         
+         // upload file
+         if( ftp_put($this->ftpConn, $this->config['ftpUploadPath']."/".$this->config['fileName'], 
+                 $this->config['filePath'].$this->config['fileName'], FTP_ASCII)){
+                 
+                // get file info 
+                 $info = pathinfo($this->config['fileName']);
                  $new_file_name = $info['filename'];
-                 if(ftp_rename($this->conn_id, $this->ftp_path."/".$local_file, $this->ftp_path."/".$new_file_name)):
-                     $rsp = TRUE;
-                 error_log("File has been renamed");
+                 // remove file extension and put in the final location path
+                 if(ftp_rename($this->ftpConn, $this->config['ftpUploadPath']."/".$this->config['fileName'], 
+                         $this->config['ftpLocationPath']."/".$new_file_name)):
                  endif;
          }else{
-
-             error_log("Error uploading file.");
-         }        
+             
+             // Error uploading file
+         }
+         
+         // close conection
+         ftp_close($this->ftpConn);
     }
+    /***/
     
 }
