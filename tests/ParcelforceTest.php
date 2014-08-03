@@ -46,7 +46,7 @@ class ParcelforceTest extends TestCase{
     public function setUp() {
         parent::setUp();
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
-        $this->config = Config::get('parcelforce::config');
+        $this->config = $this->pf->getConfig();
         $this->senderData = array(
                     array(
                         "collectionDetails" =>array(
@@ -149,28 +149,27 @@ class ParcelforceTest extends TestCase{
      */
     public function test_set_header(){
         
-        $config = $this->pf->getConfig();
-        $fileContent = $config['header_record_type_indicator']
-                .$config['delimiterChar']
-                .$config['header_file_version_number']
-                .$config['delimiterChar']
-                .$config['header_file_type']                
-                .$config['delimiterChar']
-                .$config['header_customer_account']
-                .$config['delimiterChar']
-                .$config['header_generic_contract']
-                .$config['delimiterChar']
-                .$config['header_bath_number']
-                .$config['delimiterChar']
-                .$config['header_dispatch_date']
-                .$config['delimiterChar']
-                .$config['header_dispatch_time']
-                .$config['delimiterChar']
-                .$config['header_last_collection']
-                .$config['delimiterChar']
+        $fileContent = $this->config['header_record_type_indicator']
+                .$this->config['delimiterChar']
+                .$this->config['header_file_version_number']
+                .$this->config['delimiterChar']
+                .$this->config['header_file_type']                
+                .$this->config['delimiterChar']
+                .$this->config['header_customer_account']
+                .$this->config['delimiterChar']
+                .$this->config['header_generic_contract']
+                .$this->config['delimiterChar']
+                .$this->config['header_bath_number']
+                .$this->config['delimiterChar']
+                .$this->config['header_dispatch_date']
+                .$this->config['delimiterChar']
+                .$this->config['header_dispatch_time']
+                .$this->config['delimiterChar']
+                .$this->config['header_last_collection']
+                .$this->config['delimiterChar']
                 ."\r\n";
        
-        $mock = m::mock('Alexpechkarev\Parcelforce\Parcelforce');
+        $mock = m::mock('Alexpechkarev\Parcelforce\Parcelforce', $this->config);
         $mock->shouldReceive('setHeader')
                 ->once()
                 ->andReturn($this->pf->getFileContent());
@@ -198,6 +197,33 @@ class ParcelforceTest extends TestCase{
 
         $this->assertStringEqualsFile(__DIR__."/setRecordResponse",$mock->setRecord($this->senderData));
         
+    }
+    /***/
+    
+    /**
+     * Testing setFooter method
+     * @test
+     */
+    public function test_set_footer(){
+        
+        $this->pf->setRecord($this->senderData);
+        $this->config = $this->pf->getConfig();
+        $footer = $this->config['trailer_record_type_indicator']
+                .$this->config['delimiterChar']
+                .$this->config['trailer_file_version_number']
+                .$this->config['delimiterChar']
+                .$this->config['trailer_record_count']
+                .$this->config['delimiterChar'];
+        
+        $mock = m::mock('Alexpechkarev\Parcelforce\Parcelforce', $this->config);
+        $mock->shouldReceive('getFooter')
+                ->once()
+                ->andReturn($this->pf->getFooter());
+        
+        $resp = strcmp($footer, $mock->getFooter());
+        
+        $this->assertTrue( empty( $resp ) );
+       
     }
     /***/
 }

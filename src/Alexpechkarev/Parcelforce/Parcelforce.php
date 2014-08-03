@@ -122,7 +122,7 @@ class Parcelforce {
      */
     public function process($data){
         $this->setRecord($data);
-        $this->setFooter();
+        $this->fileContent.= $this->getFooter();
         $this->createFile();
         $this->uploadFile();
         
@@ -432,11 +432,11 @@ class Parcelforce {
     /***/
     
     /**
-     * Set trailer footer
+     * Get trailer footer
      */
-    public function setFooter(){
+    public function getFooter(){
         
-        $this->fileContent.= $this->config['trailer_record_type_indicator']
+        return $this->config['trailer_record_type_indicator']
                 .$this->config['delimiterChar']
                 .$this->config['trailer_file_version_number']
                 .$this->config['delimiterChar']
