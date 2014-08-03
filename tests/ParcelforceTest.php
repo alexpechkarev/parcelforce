@@ -30,12 +30,11 @@
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
 
-use Illuminate\Foundation\Testing\TestCase;
 use Alexpechkarev\Parcelforce\Parcelforce;
 use Mockery as m;
 
 
-class ParcelforceTest extends TestCase{    
+class ParcelforceTest extends PHPUnit_Framework_TestCase{    
     
     
     protected $pf;
