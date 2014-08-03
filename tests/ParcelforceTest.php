@@ -41,11 +41,49 @@ class ParcelforceTest extends TestCase{
     
     protected $pf;
     protected $config;
-    
+    protected $senderData;
+
     public function setUp() {
         parent::setUp();
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
         $this->config = Config::get('parcelforce::config');
+        $this->senderData = array(
+                    array(
+                        "collectionDetails" =>array(
+                            "senderName"    =>'PARCELFORCE WORLDWIDE', 
+                            "senderAddress1"=>"LYTHAM HOUSE", 
+                            "senderAddress2"=>'28 CALDECOTTE LAKE DRIVE',
+                            "senderAddress3"=>'CALDECOTTE',
+                            "senderPostTown"=>'MILTON KEYNES',        
+                            "senderPostcode"=>"MK7 8LE"
+                            ),
+                        "deliveryDetails"=>array(
+                            'receiverName'      =>"FedEx UK",
+                            'receiverAddress1'  =>'UNITS 23 & 24',
+                            'receiverAddress2'  =>'COMMON BANK EMPLOYMENT AREA',
+                            'receiverPostTown' =>'CHORLEY',
+                            'receiverPostcode'  =>'PR7 1NH'
+                            )
+                        ),
+
+                    array(
+                        "collectionDetails" =>array(
+                            "senderName"    =>'FedEx UK', 
+                            "senderAddress1"=>"UNITS 23 & 24", 
+                            "senderAddress2"=>'COMMON BANK EMPLOYMENT AREA',
+                            "senderPostTown"=>'CHORLEY',        
+                            "senderPostcode"=>"PR7 1NH"
+                            ),
+                        "deliveryDetails"=>array(
+                            'receiverName'      =>"PARCELFORCE WORLDWIDE",
+                            'receiverAddress1'  =>'LYTHAM HOUSE',
+                            'receiverAddress2'  =>'28 CALDECOTTE LAKE DRIVE',
+                            'receiverAddress3'  =>'CALDECOTTE',
+                            'receiverPostTown' =>'MILTON KEYNES',
+                            'receiverPostcode'  =>'MK7 8LE'
+                        )                
+                   )           
+                );
     }
     
     public function tearDown() {
@@ -94,14 +132,53 @@ class ParcelforceTest extends TestCase{
      * @test
      */
     public function test_add_delimiter(){
-        $arr1 = array("foo"=>"bar", "baz"=>"doo");
-        $arr2 = array("foo"=>"bar", "baz"=>"doo");
+        $arr1 = array("foo"=>"bar", "baz"=>"foo", "one"=>"+", "two"=>"+", "three"=>"three");
+        $arr2 = array("foo"=>"bar", "baz"=>"foo", "one"=>"+", "two"=>"+", "three"=>"three");
         $this->pf->addDelimiter($arr1, $arr2);
         $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['foo']);
         $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['baz']);
+        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['one']);
+        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['two']);
+        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['three']);
     }
     /***/
     
+    /**
+     * Testing setHeader method
+     * @test
+     */
+    public function test_set_header(){
+        
+        $config = $this->pf->getConfig();
+        $fileContent = $config['header_record_type_indicator']
+                .$config['delimiterChar']
+                .$config['header_file_version_number']
+                .$config['delimiterChar']
+                .$config['header_file_type']                
+                .$config['delimiterChar']
+                .$config['header_customer_account']
+                .$config['delimiterChar']
+                .$config['header_generic_contract']
+                .$config['delimiterChar']
+                .$config['header_bath_number']
+                .$config['delimiterChar']
+                .$config['header_dispatch_date']
+                .$config['delimiterChar']
+                .$config['header_dispatch_time']
+                .$config['delimiterChar']
+                .$config['header_last_collection']
+                .$config['delimiterChar']
+                ."\r\n";
+       
+        $mock = m::mock('Alexpechkarev\Parcelforce\Parcelforce');
+        $mock->shouldReceive('setHeader')
+                ->once()
+                ->andReturn($this->pf->getFileContent());
+        
+        $resp = strcmp( $fileContent, $mock->setHeader() );
+        $this->assertTrue( empty( $resp ) );
+    }
+    /***/
     
     /**
      * Testing setRecord method
@@ -109,54 +186,17 @@ class ParcelforceTest extends TestCase{
      */
     public function test_set_record(){
 
-        $senderData = array(
-                    array(
-                        "collectionDetails" =>array(
-                            "senderName"    =>'PARCELFORCE WORLDWIDE', 
-                            "senderAddress1"=>"LYTHAM HOUSE", 
-                            "senderAddress2"=>'28 CALDECOTTE LAKE DRIVE',
-                            "senderAddress3"=>'CALDECOTTE',
-                            "senderPostTown"=>'MILTON KEYNES',        
-                            "senderPostcode"=>"MK7 8LE"
-                            ),
-                        "deliveryDetails"=>array(
-                            'receiverName'      =>"FedEx UK",
-                            'receiverAddress1'  =>'UNITS 23 & 24',
-                            'receiverAddress2'  =>'COMMON BANK EMPLOYMENT AREA',
-                            'receiverPostTown' =>'CHORLEY',
-                            'receiverPostcode'  =>'PR7 1NH'
-                            )
-                        ),
-
-                    array(
-                        "collectionDetails" =>array(
-                            "senderName"    =>'FedEx UK', 
-                            "senderAddress1"=>"UNITS 23 & 24", 
-                            "senderAddress2"=>'COMMON BANK EMPLOYMENT AREA',
-                            "senderPostTown"=>'CHORLEY',        
-                            "senderPostcode"=>"PR7 1NH"
-                            ),
-                        "deliveryDetails"=>array(
-                            'receiverName'      =>"PARCELFORCE WORLDWIDE",
-                            'receiverAddress1'  =>'LYTHAM HOUSE',
-                            'receiverAddress2'  =>'28 CALDECOTTE LAKE DRIVE',
-                            'receiverAddress3'  =>'CALDECOTTE',
-                            'receiverPostTown' =>'MILTON KEYNES',
-                            'receiverPostcode'  =>'MK7 8LE'
-                        )                
-                   )           
-                );
-
         $mock = m::mock('Alexpechkarev\Parcelforce\Parcelforce');
-        $mock->shouldReceive('setRecord')->once()
-                ->with($senderData)
+        $mock->shouldReceive('setRecord')
+                ->once()
+                ->with($this->senderData)
                 ->andReturn('1+02+PARCELFORCE WORLDWIDE+LYTHAM HOUSE+28 CALDECOTTE LAKE DRIVE+CALDECOTTE+++MILTON KEYNES+MK7 8LE++++++
 2+02+AB1230010+SND+++SENDER REFERENCE+0+++1++FedEx UK+UNITS 23 & 24+COMMON BANK EMPLOYMENT AREA++CHORLEY+PR7 1NH+
 1+02+FedEx UK+UNITS 23 & 24+COMMON BANK EMPLOYMENT AREA++++CHORLEY+PR7 1NH++++++
 2+02+AB1230010+SND+++SENDER REFERENCE+0+++1++PARCELFORCE WORLDWIDE+LYTHAM HOUSE+28 CALDECOTTE LAKE DRIVE+CALDECOTTE+MILTON KEYNES+MK7 8LE+
 ');
 
-        $this->assertStringEqualsFile(__DIR__."/setRecordResponse",$mock->setRecord($senderData));
+        $this->assertStringEqualsFile(__DIR__."/setRecordResponse",$mock->setRecord($this->senderData));
         
     }
     /***/

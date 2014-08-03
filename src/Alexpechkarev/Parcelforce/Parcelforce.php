@@ -508,4 +508,41 @@ class Parcelforce {
     }
     /***/
     
+    
+    
+    /**
+     * 
+     * 
+     * Getters
+     * 
+     * 
+     */
+    
+    /**
+     * Get file content
+     * @return string
+     */
+    public function getFileContent(){
+        return $this->fileContent;
+    }
+    /***/
+    
+    /**
+     * Get date object
+     * @return Carbon object
+     */
+    public function getDateObj(){
+        return $this->dateObj;
+    }
+    /***/
+    
+    /**
+     * Get config file of current instance
+     * @return array
+     */
+    public function getConfig(){
+        return $this->config;
+    }
+    /***/
+    
 }
