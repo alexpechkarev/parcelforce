@@ -32,7 +32,9 @@
 
 
 use Illuminate\Support\Facades\Config;
+use Illuminate\Foundation\Testing\TestCase;
 use Alexpechkarev\Parcelforce\Parcelforce;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Mockery as m;
 
 
@@ -42,7 +44,12 @@ class ParcelforceTest extends TestCase{
     protected $pf;
     protected $config;
     protected $senderData;
+    
 
+
+    /**
+     * Setting up
+     */
     public function setUp() {
         parent::setUp();
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
@@ -85,12 +92,31 @@ class ParcelforceTest extends TestCase{
                    )           
                 );
     }
+    /***/
     
+    /**
+     * Close Mockery
+     */
     public function tearDown() {
         parent::tearDown();
         m::close();
     }
+    /***/
     
+    /**
+     * Creates the application.
+     *
+     * @return Symfony\Component\HttpKernel\HttpKernelInterface
+     */
+    public function createApplication()
+    {
+      $unitTesting = true;
+
+      $testEnvironment = 'testing';
+      
+      return require __DIR__.'/../../bootstrap/start.php';
+    }    
+
     /**
      * Instantiate Parcelforce class
      * @test
@@ -201,7 +227,7 @@ class ParcelforceTest extends TestCase{
     /***/
     
     /**
-     * Testing setFooter method
+     * Testing getFooter method
      * @test
      */
     public function test_set_footer(){
@@ -226,4 +252,6 @@ class ParcelforceTest extends TestCase{
        
     }
     /***/
+    
+
 }
