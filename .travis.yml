@@ -14,6 +14,6 @@ env:
 before_script:
   - composer self-update
   - composer install --prefer-source --no-interaction --dev
-  - if [[ "$DB" == "mysql" ]]; then mysql -e "create database IF NOT EXISTS devdb;" -uroot; fi  
+  #- if [[ "$DB" == "mysql" ]]; then mysql -e "create database IF NOT EXISTS devdb;" -uroot; fi  
 
-script: phpunit
+#script: phpunit

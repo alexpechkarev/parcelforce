@@ -12,9 +12,11 @@
         "illuminate/support": "~4.0"
     },
     "require-dev": {
+        "illuminate/support": "~4.0",
         "phpunit/phpunit": "~3.7",
         "phpunit/php-invoker": "dev-master",
-        "mockery/mockery": "dev-master@dev"
+        "mockery/mockery": "dev-master@dev",
+        "phpspec/phpspec": "~2.0"
     },    
     "autoload": {
 		"classmap": [
