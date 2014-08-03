@@ -49,7 +49,8 @@ class ParcelforceTest extends PHPUnit_Framework_TestCase{
     public function setUp() {
         
         parent::setUp();
-       
+       $c = new \Illuminate\Config\FileLoader("config.php", __DIR__);
+       dd($c);
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
         $this->config = $this->pf->getConfig();
         $this->senderData = array(
@@ -112,7 +113,7 @@ class ParcelforceTest extends PHPUnit_Framework_TestCase{
 
       $testEnvironment = 'testing';
       
-      return require __DIR__.'/../../../../bootstrap/start.php';
+      return require __DIR__.'/../phpunit.php';
     }    
 
     /**
