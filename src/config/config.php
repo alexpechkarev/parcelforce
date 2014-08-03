@@ -483,7 +483,8 @@
         /**
          * Location consignment files
          */        
-        'filePath'                        => app_path('config/packages/alexpechkarev/parcelforce/files/'),
+        #'filePath'                        => app_path('config/packages/alexpechkarev/parcelforce/files/'),
+        'filePath'                        => __DIR__.'/files/',
         
         /**
          * File name prefix - supplied by ParcelForce

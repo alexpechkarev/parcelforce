@@ -30,11 +30,8 @@
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
 
-
-use Illuminate\Support\Facades\Config;
 use Illuminate\Foundation\Testing\TestCase;
 use Alexpechkarev\Parcelforce\Parcelforce;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Mockery as m;
 
 
@@ -51,7 +48,9 @@ class ParcelforceTest extends TestCase{
      * Setting up
      */
     public function setUp() {
+        
         parent::setUp();
+       
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
         $this->config = $this->pf->getConfig();
         $this->senderData = array(
@@ -114,7 +113,7 @@ class ParcelforceTest extends TestCase{
 
       $testEnvironment = 'testing';
       
-      return require __DIR__.'/../../bootstrap/start.php';
+      return require __DIR__.'/../../../../bootstrap/start.php';
     }    
 
     /**
