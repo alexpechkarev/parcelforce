@@ -34,7 +34,7 @@ use Alexpechkarev\Parcelforce\Parcelforce;
 use Mockery as m;
 
 
-class ParcelforceTest extends PHPUnit_Framework_TestCase{    
+class ParcelforceTest extends \PHPUnit_Framework_TestCase{    
     
     
     protected $pf;
@@ -49,8 +49,11 @@ class ParcelforceTest extends PHPUnit_Framework_TestCase{
     public function setUp() {
         
         parent::setUp();
-       $c = new \Illuminate\Config\FileLoader("config.php", __DIR__);
-       dd($c);
+        $this->refreshApplication();
+        $app = new \Illuminate\Foundation\Application;
+        #dd($app);
+        #dd(include(__DIR__.'/../src/config/config.php'));
+        #$this->pf = new Parcelforce(include(__DIR__.'/../src/config/config.php'));
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
         $this->config = $this->pf->getConfig();
         $this->senderData = array(
@@ -101,20 +104,7 @@ class ParcelforceTest extends PHPUnit_Framework_TestCase{
         m::close();
     }
     /***/
-    
-    /**
-     * Creates the application.
-     *
-     * @return Symfony\Component\HttpKernel\HttpKernelInterface
-     */
-    public function createApplication()
-    {
-      $unitTesting = true;
-
-      $testEnvironment = 'testing';
-      
-      return require __DIR__.'/../phpunit.php';
-    }    
+     
 
     /**
      * Instantiate Parcelforce class

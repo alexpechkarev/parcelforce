@@ -1,5 +1,6 @@
 {
     "name": "alexpechkarev/parcelforce",
+    "version": "1.0.0",
     "description": "",
     "authors": [
         {
@@ -12,20 +13,18 @@
         "illuminate/support": "~4.0"
     },
     "require-dev": {
-        "illuminate/support": "~4.0",
+        "laravel/framework": "4.1.*",
         "phpunit/phpunit": "~3.7",
         "phpunit/php-invoker": "dev-master",
         "mockery/mockery": "dev-master@dev"
     },    
     "autoload": {
 		"classmap": [
+                        "src/",
 			"src/models",
                         "src/migrations",
                         "tests/"
-		], 
-        "files": [
-            "vendor/illuminate/support/Illuminate/Support/helpers.php"
-        ],                
+		],                 
         "psr-0": {
             "Alexpechkarev\\Parcelforce": "src/"
         }

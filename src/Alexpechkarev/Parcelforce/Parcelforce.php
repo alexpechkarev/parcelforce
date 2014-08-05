@@ -32,6 +32,7 @@
 namespace Alexpechkarev\Parcelforce;
 
 use Carbon\Carbon;
+
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -80,6 +81,7 @@ class Parcelforce {
      */
     public function setup(){
         
+        #dd(\Illuminate\Filesystem\Filesystem::isDirectory($this->config['filePath']));
         
         // Check if files directory has been created
         if(!File::isDirectory($this->config['filePath'])):

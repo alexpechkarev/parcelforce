@@ -30,7 +30,6 @@
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
 
-
 class FileNumber extends Eloquent {
 
 	/**
