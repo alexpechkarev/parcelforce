@@ -64,7 +64,7 @@ composer require mockery/mockery
 
 Copy test and dataset file to app/tests
 ```
-cp vendor/alexpechkarev/parcelforce/tests/ParcelforceTest.php app/tests/
+cp vendor/alexpechkarev/parcelforce/tests/ParcelforceTest.txt app/tests/ParcelforceTest.php
 
 cp vendor/alexpechkarev/parcelforce/tests/setRecordResponse app/tests/
 
