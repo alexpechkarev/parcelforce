@@ -9,6 +9,10 @@ php:
   
 before_script:
   - composer self-update
+  - composer require laravel/framework:~4.0
+  - composer require phpunit/phpunit:~3.0
+  - composer require phpunit/php-invoker:dev-master
+  - composer require mockery/mockery:dev-master@dev
   - composer install --prefer-source --no-interaction --dev 
   - composer update
 
