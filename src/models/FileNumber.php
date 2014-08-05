@@ -29,6 +29,9 @@
  *
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
+namespace Alexpechkarev\Parcelforce\models;
+
+use \Illuminate\Database\Eloquent\Model as Eloquent;
 
 class FileNumber extends Eloquent {
 

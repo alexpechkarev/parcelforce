@@ -37,8 +37,9 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
-use ConsNumber;
-use FileNumber;
+use Alexpechkarev\Parcelforce\models\ConsNumber;
+use Alexpechkarev\Parcelforce\models\FileNumber;
+
 
 class Parcelforce {
 
@@ -103,7 +104,7 @@ class Parcelforce {
         
         // initialized dr_consignment_number with database on first run
         if( ConsNumber::all()->count() === 0):
-            ConsNumber::create(array('consnum' => $this->config['dr_consignment_number'] ));            
+            ConsNumber::create(array('consnum' => $this->config['deliveryDetails']['dr_consignment_number'] ));            
         else:
             $this->getConsignmentNumber();
         endif;        
@@ -341,7 +342,7 @@ class Parcelforce {
     public function getConsignmentNumber(){
         
         $fn = ConsNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
-        $this->config['dr_consignment_number'] = $fn[0]['consnum'];
+        $this->config['deliveryDetails']['dr_consignment_number'] = $fn[0]['consnum'];
         // set check digit for new consignment number
         $this->setCheckDigit();
         
@@ -358,7 +359,7 @@ class Parcelforce {
      * Max/Min - 6 
      */
     public function setConsignmentNumber(){
-        ConsNumber::create(array('consnum' => ++$this->config['dr_consignment_number'] ));
+        ConsNumber::create(array('consnum' => ++$this->config['deliveryDetails']['dr_consignment_number'] ));
     }
     /***/    
     
@@ -384,12 +385,12 @@ class Parcelforce {
      */
     public function setCheckDigit(){
         
-        $sum =      ($this->config['dr_consignment_number'][0] * 4) 
-                +   ($this->config['dr_consignment_number'][1] * 2) 
-                +   ($this->config['dr_consignment_number'][2] * 3) 
-                +   ($this->config['dr_consignment_number'][3] * 5) 
-                +   ($this->config['dr_consignment_number'][4] * 9) 
-                +   ($this->config['dr_consignment_number'][5] * 7) ;
+        $sum =      ($this->config['deliveryDetails']['dr_consignment_number'][0] * 4) 
+                +   ($this->config['deliveryDetails']['dr_consignment_number'][1] * 2) 
+                +   ($this->config['deliveryDetails']['dr_consignment_number'][2] * 3) 
+                +   ($this->config['deliveryDetails']['dr_consignment_number'][3] * 5) 
+                +   ($this->config['deliveryDetails']['dr_consignment_number'][4] * 9) 
+                +   ($this->config['deliveryDetails']['dr_consignment_number'][5] * 7) ;
         
         $rem = $sum % 11;
         $checkdigit = 0;
