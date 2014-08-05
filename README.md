@@ -57,4 +57,16 @@ php artisan migrate --package="alexpechkarev/parcelforce"
 Testing
 -------------
 
-Install as composer require --dev alexpechkarev/parcelforce
+Install Mockery 
+```
+composer require mockery/mockery
+```
+
+Copy test and dataset file to app/tests
+```
+cp vendor/alexpechkarev/parcelforce/tests/ParcelforceTest.php app/tests/
+
+cp vendor/alexpechkarev/parcelforce/tests/setRecordResponse app/tests/
+
+phpunit app/tests/ParcelforceTest.php
+```
