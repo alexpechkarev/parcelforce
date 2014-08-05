@@ -30,5 +30,7 @@
         "psr-0": {
             "Alexpechkarev\\Parcelforce": "src/"
         }
-    }
+    },
+    
+     "minimum-stability": "stable"
 }
