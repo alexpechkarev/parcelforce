@@ -53,3 +53,8 @@ Publish package migrations.
 php artisan migrate --package="alexpechkarev/parcelforce"
 
 ```
+
+Testing
+-------------
+
+Install as composer require --dev alexpechkarev/parcelforce

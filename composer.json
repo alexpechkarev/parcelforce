@@ -1,6 +1,5 @@
 {
     "name": "alexpechkarev/parcelforce",
-    "version": "1.0.0",
     "description": "Parcelforce API",
     "homepage": "https://github.com/alexpechkarev/parcelforce",
     "license": "MIT",
@@ -10,12 +9,18 @@
             "email": "alexpechkarev@gmail.com"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/alexpechkarev/parcelforce"
+        }
+    ],    
     "require": {
         "php": ">=5.4.0",
         "illuminate/support": "~4.0"
     },
     "require-dev": {
-        "laravel/framework": "4.1.*",
+        "laravel/framework": "~4.0",
         "phpunit/phpunit": "~3.7",
         "phpunit/php-invoker": "dev-master",
         "mockery/mockery": "dev-master@dev"
