@@ -1,7 +1,9 @@
 {
     "name": "alexpechkarev/parcelforce",
     "version": "1.0.0",
-    "description": "",
+    "description": "Parcelforce API",
+    "homepage": "https://github.com/alexpechkarev/parcelforce",
+    "license": "MIT",
     "authors": [
         {
             "name": "Alexander Pechkarev",
