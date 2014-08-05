@@ -98,6 +98,9 @@ class Parcelforce {
         // initialized fileNumber with database on first run
         if( FileNumber::all()->count() === 0):
             FileNumber::create(array('filenum' => $this->config['fileNumber'] ));
+            $this->config['header_bath_number'] = $this->padWithZero(); 
+            $this->config['fileName'].= $this->padWithZero().'.tmp';
+            
         else:
             $this->setFileName();
         endif;
@@ -290,6 +293,17 @@ class Parcelforce {
     /***/
 
     /**
+     * Pad left with zeros
+     * @return string
+     */
+    public function padWithZero(){
+        
+        $num = (strlen((string)$this->config['fileNumber'] )+4) - strlen((string)$this->config['fileNumber'] );
+        return str_pad($this->config['fileNumber'], $num, 0, STR_PAD_LEFT);
+    }
+    /***/
+    
+    /**
      * Get file name
      * Also set batch number
      */
@@ -307,16 +321,14 @@ class Parcelforce {
             
             $this->config['fileNumber']         = $fn[0]['filenum'];
             // pad number left with zeros and set file name
-            $num = (strlen((string)$fn[0]['filenum'])+4) - strlen((string)$fn[0]['filenum']);
-            $this->config['fileName'].= str_pad($fn[0]['filenum'], $num, 0, STR_PAD_LEFT).'.tmp';
+            $this->config['fileName'].= $this->padWithZero().'.tmp';
             
             /**
              * Unique number per batch, to be created by the source system 
              * Start at 1 and increment by 1 per batch After 9999 is reached, restart at 1
              */
             // pad number left with zeros and set file name
-            $num = (strlen((string)$fn[0]['filenum'])+4) - strlen((string)$fn[0]['filenum']);
-            $this->config['header_bath_number'] = str_pad($fn[0]['filenum'], $num, 0, STR_PAD_LEFT);            
+            $this->config['header_bath_number'] = $this->padWithZero();            
           
             // incremnt file number for next run
             $this->setFileNumber(); 

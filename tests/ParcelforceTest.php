@@ -30,11 +30,14 @@
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
 
+
+use Illuminate\Support\Facades\Config;
+use Illuminate\Foundation\Testing\TestCase;
 use Alexpechkarev\Parcelforce\Parcelforce;
 use Mockery as m;
 
 
-class ParcelforceTest extends \PHPUnit_Framework_TestCase{    
+class ParcelforceTest extends TestCase{    
     
     
     protected $pf;
@@ -47,13 +50,7 @@ class ParcelforceTest extends \PHPUnit_Framework_TestCase{
      * Setting up
      */
     public function setUp() {
-        
         parent::setUp();
-        $this->refreshApplication();
-        $app = new \Illuminate\Foundation\Application;
-        #dd($app);
-        #dd(include(__DIR__.'/../src/config/config.php'));
-        #$this->pf = new Parcelforce(include(__DIR__.'/../src/config/config.php'));
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
         $this->config = $this->pf->getConfig();
         $this->senderData = array(
@@ -104,7 +101,20 @@ class ParcelforceTest extends \PHPUnit_Framework_TestCase{
         m::close();
     }
     /***/
-     
+    
+    /**
+     * Creates the application.
+     *
+     * @return Symfony\Component\HttpKernel\HttpKernelInterface
+     */
+    public function createApplication()
+    {
+      $unitTesting = true;
+
+      $testEnvironment = 'testing';
+      
+      return require __DIR__.'/../../bootstrap/start.php';
+    }    
 
     /**
      * Instantiate Parcelforce class
