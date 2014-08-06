@@ -59,7 +59,7 @@ Testing
 
 Install Mockery 
 ```
-composer require mockery/mockery
+composer require mockery/mockery:dev-master@dev
 ```
 
 Copy test and dataset file to app/tests
