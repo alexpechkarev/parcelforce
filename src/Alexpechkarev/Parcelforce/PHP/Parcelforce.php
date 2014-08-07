@@ -32,8 +32,13 @@
 
 namespace Alexpechkarev\Parcelforce\PHP;
 
+use \PDO;
+use \PDOException;
+use \RuntimeException;
+use \DateTime;
+use \DateTimeZone;
 
-class Parcelforce extends \PDO{
+class Parcelforce extends PDO{
 
     /*
     |--------------------------------------------------------------------------
@@ -59,7 +64,7 @@ class Parcelforce extends \PDO{
        
        // validating config
        if(!is_array($this->config) || count($this->config) < 1):
-           throw new \RuntimeException('Please check config.php exists.');
+           throw new RuntimeException('Please check config.php exists.');
        endif;
        
        // init database connection
@@ -67,18 +72,18 @@ class Parcelforce extends \PDO{
             parent::__construct('mysql:host='.$this->config['DB_HOST'].';dbname='.$this->config['DB_NAME'],
                     $this->config['DB_USER'],
                     $this->config['DB_PASS'],
-                    array(\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES UTF8"));
+                    array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES UTF8"));
             
-        }catch(\PDOException $e){
-            throw new \RuntimeException('Please ensure files directory exists.');
+        }catch(PDOException $e){
+            throw new RuntimeException('Check database settings: '.$e->getMessage());
         }
         
        // set date object
-       $this->dateObj = new \DateTime($this->config['collectionDate'], new \DateTimeZone('Europe/London'));         
+       $this->dateObj = new DateTime($this->config['collectionDate'], new DateTimeZone('Europe/London'));         
        // setting dispatch date
        $this->config['header_dispatch_date'] = $this->dateObj->format('Ymd');
         
-       $this->dd($this->config);
+       #self::dd($this->config);
        $this->setup();       
        $this->setHeader(); 
        
@@ -86,10 +91,15 @@ class Parcelforce extends \PDO{
     }
     /***/
     
-    public function dd($d){
+    /**
+     * Debug output method
+     * @param mixed $d
+     */
+    public static function dd($d){
         
         die(var_dump($d));
     }
+    /***/
     
     /**
      * Perform necessary checks
@@ -102,28 +112,32 @@ class Parcelforce extends \PDO{
         
         // Check if files directory has been created
         if(!is_dir($this->config['filePath'])):
-            throw new \RuntimeException('Please ensure files directory exists.');
+            throw new RuntimeException('Please ensure files directory exists.');
         endif;
         
         // Check if files directory has been created
         if(!is_writable($this->config['filePath'])):
-            throw new \RuntimeException('Please make sure that files directory is writable.');
+            throw new RuntimeException('Please make sure that files directory is writable.');
         endif;
         
         
-        // initialized fileNumber with database on first run
-        if( FileNumber::all()->count() === 0):
-            FileNumber::create(array('filenum' => $this->config['fileNumber'] ));
+        
+        // create table if not exists
+        if( !$this->isTableExists($this->config['filenum_table'])):
+            $this->createTable($this->config['filenum_table'], $this->config['fileNumber']); 
+            $this->insertTableValue($this->config['filenum_table'], $this->config['fileNumber']);
             $this->config['header_bath_number'] = $this->padWithZero(); 
             $this->config['fileName'].= $this->padWithZero().'.tmp';
-            
         else:
             $this->setFileName();
         endif;
         
+        
+        
         // initialized dr_consignment_number with database on first run
-        if( ConsNumber::all()->count() === 0):
-            ConsNumber::create(array('consnum' => $this->config['deliveryDetails']['dr_consignment_number'] ));            
+        if( !$this->isTableExists($this->config['consnum_table'])):
+            $this->createTable($this->config['consnum_table']);
+            $this->insertTableValue($this->config['consnum_table'], $this->config['deliveryDetails']['dr_consignment_number']);        
         else:
             $this->getConsignmentNumber();
         endif;        
@@ -132,6 +146,86 @@ class Parcelforce extends \PDO{
         return true;
     }
     /***/    
+    
+    /*
+    |-----------------------------------------------------------------------
+    | Databse helper methods
+    |-----------------------------------------------------------------------
+    */  
+    
+    /**
+     * Is given table exists
+     * @param string $table
+     * @return boolean
+     */
+    public function isTableExists($tableData){
+        $st = parent::prepare('SHOW TABLES LIKE :table');
+        $st->bindParam(':table', $tableData['tableName'], PDO::PARAM_STR);
+        $st->execute();
+        
+        return ( $st->rowCount() > 0);
+    }
+    /***/
+    
+    /**
+     * Retrive data from given table
+     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
+     * @return object stdClass
+     */
+    public function getTableValue($tableData){
+        
+        $st = parent::prepare('SELECT '.$tableData['fieldName']
+                .' FROM '.$tableData['tableName']
+                .' ORDER BY id DESC LIMIT 1');
+        $st->execute();
+        return $st->fetchObject();
+    }
+    /***/
+    
+    /**
+     * Insert value into given table
+     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
+     * @param mixed $value
+     * @return boolean
+     */
+    public function insertTableValue($tableData, $value){
+        
+        $st = parent::prepare('INSERT INTO '.$tableData['tableName']
+                .' ('.$tableData['fieldName'].')'
+                .' VALUES(:value)');
+        
+        $st->bindParam(':value', $value, PDO::PARAM_INT);
+        return $st->execute();
+    }
+    /***/
+    
+    /**
+     * Creating default table
+     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
+     */
+    public function createTable($tableData){
+        
+        $sqlCreate = "
+            CREATE TABLE `".$tableData['tableName']."` (
+              `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+              `".$tableData['fieldName']."` int(11) NOT NULL,
+              PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+            ";        
+        parent::exec($sqlCreate);
+        
+    }
+    /***/
+    
+    /**
+     * Drop and create given table with default value
+     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
+     */
+    public function dropTable($tableData){
+        
+        parent::exec('DROP TABLE IF EXISTS '.$tableData['tableName']);
+    }
+    /***/
     
     
     /**
@@ -326,16 +420,18 @@ class Parcelforce extends \PDO{
     public function setFileName(){
             
             $incrementFlag = true;
-            $fn = FileNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
-            
+            $row = $this->getTableValue($this->config['filenum_table']);
+
             // reset file and batch numbers to 1 when reached 9999
-            if($fn[0]['filenum'] == 9999):
-                $fn[0]['filenum'] = 1;
+            if($row->filenum == 9999):
+                $row->filenum = 1;
                 $incrementFlag = false;
-                $this->resetFileNumberTable();
+                $this->resetTable($this->config['filenum_table']);
+                $this->createTable($this->config['filenum_table']);
+                $this->insertTableValue($this->config['filenum_table'], $row->filenum );
             endif;
             
-            $this->config['fileNumber']         = $fn[0]['filenum'];
+            $this->config['fileNumber']         = $row->filenum ;
             // pad number left with zeros and set file name
             $this->config['fileName'].= $this->padWithZero().'.tmp';
             
@@ -346,19 +442,13 @@ class Parcelforce extends \PDO{
             // pad number left with zeros and set file name
             $this->config['header_bath_number'] = $this->padWithZero();            
           
-            // incremnt file number for next run
-            $this->setFileNumber(); 
+            // increment file number for next run
+            $this->insertTableValue($this->config['filenum_table'], ++$row->filenum );
             
     }
     /***/  
     
-    /**
-     * Get file name
-     */
-    public function setFileNumber(){   
-            FileNumber::create(array('filenum' => ++$this->config['fileNumber'] ));
-    }
-    /***/     
+    
    
 
     
@@ -369,27 +459,17 @@ class Parcelforce extends \PDO{
      */
     public function getConsignmentNumber(){
         
-        $fn = ConsNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
-        $this->config['deliveryDetails']['dr_consignment_number'] = $fn[0]['consnum'];
+        $row = $this->getTableValue($this->config['consnum_table']);
+        $this->config['deliveryDetails']['dr_consignment_number'] = $row->consnum;
         // set check digit for new consignment number
         $this->setCheckDigit();
         
         // increment number for next call
-        $this->setConsignmentNumber();
+        $this->insertTableValue($this->config['consnum_table'], ++$row->consnum);
         
     }
     /***/
-       
-    
-    /**
-     * Set consignment number by incrementing it's value by 1 and store db
-     * Format integer
-     * Max/Min - 6 
-     */
-    public function setConsignmentNumber(){
-        ConsNumber::create(array('consnum' => ++$this->config['deliveryDetails']['dr_consignment_number'] ));
-    }
-    /***/    
+          
     
     
     /**

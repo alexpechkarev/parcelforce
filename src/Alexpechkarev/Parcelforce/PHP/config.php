@@ -43,6 +43,23 @@
         
         'DB_PASS'       =>  '778778',
         
+        
+        /*
+        |-----------------------------------------------------------------------
+        | Databse tables
+        |-----------------------------------------------------------------------
+        */         
+        
+        'filenum_table' => array(
+            'tableName' => 'tbl_parcelforce_filenum',
+            'fieldName' => 'filenum'
+            ),
+        
+        'consnum_table' => array(
+            'tableName' => 'tbl_parcelforce_consnum',
+            'fieldName' => 'consnum'
+            ),
+        
         /*
         |-----------------------------------------------------------------------
         | Header Record – Type 0
