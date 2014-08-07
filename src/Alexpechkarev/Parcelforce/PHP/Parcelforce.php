@@ -83,7 +83,6 @@ class Parcelforce extends PDO{
        // setting dispatch date
        $this->config['header_dispatch_date'] = $this->dateObj->format('Ymd');
         
-       #self::dd($this->config);
        $this->setup();       
        $this->setHeader(); 
        
@@ -108,8 +107,7 @@ class Parcelforce extends PDO{
      */
     public function setup(){
         
-        #dd(\Illuminate\Filesystem\Filesystem::isDirectory($this->config['filePath']));
-        
+       
         // Check if files directory has been created
         if(!is_dir($this->config['filePath'])):
             throw new RuntimeException('Please ensure files directory exists.');
