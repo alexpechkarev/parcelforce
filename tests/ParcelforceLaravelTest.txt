@@ -37,7 +37,7 @@ use Alexpechkarev\Parcelforce\Parcelforce;
 use Mockery as m;
 
 
-class ParcelforceTest extends TestCase{    
+class ParcelforceLaravelTest extends TestCase{    
     
     
     protected $pf;

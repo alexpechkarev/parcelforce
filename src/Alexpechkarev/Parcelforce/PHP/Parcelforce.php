@@ -165,6 +165,7 @@ class Parcelforce extends PDO{
         $this->setRecord($data);
         $this->fileContent.= $this->getFooter();
         $this->createFile();
+        
         #$this->uploadFile();
        
         
@@ -215,6 +216,7 @@ class Parcelforce extends PDO{
             
             //merge with default delivery details
             $deliveryDetails = array_merge($this->config['deliveryDetails'], $item['deliveryDetails']); 
+            var_dump($this->config['deliveryDetails']);
             // check that mandatory fields specified [not null]
             try{
                 array_count_values($deliveryDetails);
@@ -255,7 +257,7 @@ class Parcelforce extends PDO{
             
             // increment record count            
             $this->config['trailer_record_count']++;
-
+            var_dump( $deliveryDetails['dr_consisgnment_check_digit']);
             $this->fileContent.= 
                                 $deliveryDetails['dr_record_type_indicator']
                                .$this->config['delimiterChar']
@@ -284,7 +286,10 @@ class Parcelforce extends PDO{
                                .$deliveryDetails['receiverPostTown']
                                .$deliveryDetails['receiverPostcode']
                                .$this->config['delimiterChar'] 
-                               ."\r\n";            
+                               ."\r\n"; 
+            
+            // increment consignment number for next run
+            $this->setConsignmentNumber();
                         
       endwhile;
         
@@ -342,7 +347,7 @@ class Parcelforce extends PDO{
         $this->setCheckDigit();
         
         // increment number for next call
-        $this->insertTableValue($this->config['consnum_table'], ++$row->{$this->config['consnum_table']['fieldName']});
+        $this->insertTableValue($this->config['consnum_table'], $row->{$this->config['consnum_table']['fieldName']}+1);
         
     }
     /***/
@@ -379,7 +384,7 @@ class Parcelforce extends PDO{
         
         $rem = $sum % 11;
         $checkdigit = 0;
-        
+
         if((11 -$rem) == 10):
             $checkdigit = 0;
         elseif((11 - $rem) == 11):
@@ -388,7 +393,7 @@ class Parcelforce extends PDO{
             $checkdigit = 11 - $rem;
         endif;
         
-        $this->config['dr_consisgnment_check_digit'] = $checkdigit;
+        $this->config['deliveryDetails']['dr_consisgnment_check_digit'] = $checkdigit;
     }
     /***/     
     
@@ -480,7 +485,7 @@ class Parcelforce extends PDO{
             $this->config['header_bath_number'] = $this->padWithZero();            
           
             // increment file number for next run
-            $this->insertTableValue($this->config['filenum_table'], ++$row->{$this->config['filenum_table']['fieldName']} );
+            $this->insertTableValue($this->config['filenum_table'], $row->{$this->config['filenum_table']['fieldName']}+1 );
             
     }
     /***/ 
@@ -516,12 +521,12 @@ class Parcelforce extends PDO{
         
         
         if(empty($this->ftpConn)):
-            throw new \RuntimeException("Unable to connect to FTP - ".$this->config['ftpHost']);
+            throw new RuntimeException("Unable to connect to FTP - ".$this->config['ftpHost']);
         endif;
 
         // attempt login
          if(ftp_login($this->ftpConn, $this->config['ftpUser'], $this->config['ftpPass']) === false):
-                 throw new \RuntimeException("Unable to FTP login with - ".$this->config['ftpUser']);
+                 throw new RuntimeException("Unable to FTP login with - ".$this->config['ftpUser']);
          endif;
                  
          // turn passive mode on

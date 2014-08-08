@@ -313,7 +313,7 @@
 
             /**
              * Consignment number providede by ParcelForce in format 2 alpha and 7 numeric
-             * should be split into two parts 2 alpho and 7 numeric and entered below separately
+             * should be split into two parts 2 alpha and 7 numeric and entered below separately
              * 
              * dr_consignment_prefix_number = 2 alpha part
              * dr_consignment_number        = 7 numeric part
@@ -563,7 +563,7 @@
          * FTP Location Path
          * Parcelforce requires moving files to another path after upload
          */
-        'ftpLocationPath'                => '/location/path',         
+        'ftpLocationPath'                => '/location/path',       
         
        
     );      

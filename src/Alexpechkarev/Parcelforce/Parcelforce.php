@@ -247,7 +247,10 @@ class Parcelforce {
                                .$deliveryDetails['receiverPostTown']
                                .$deliveryDetails['receiverPostcode']
                                .$this->config['delimiterChar'] 
-                               ."\r\n";            
+                               ."\r\n";  
+            
+            // increment consignment number
+            $this->getConsignmentNumber();            
                         
         });
         
@@ -415,7 +418,7 @@ class Parcelforce {
             $checkdigit = 11 - $rem;
         endif;
         
-        $this->config['dr_consisgnment_check_digit'] = $checkdigit;
+        $this->config['deliveryDetails']['dr_consisgnment_check_digit'] = $checkdigit;
     }
     /***/     
     
