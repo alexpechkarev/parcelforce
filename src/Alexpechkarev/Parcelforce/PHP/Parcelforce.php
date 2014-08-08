@@ -122,10 +122,14 @@ class Parcelforce extends PDO{
         
         // create table if not exists
         if( !$this->isTableExists($this->config['filenum_table'])):
+            
             $this->createTable($this->config['filenum_table'], $this->config['fileNumber']); 
             $this->insertTableValue($this->config['filenum_table'], $this->config['fileNumber']);
+            // increment for next run
+            $this->insertTableValue($this->config['filenum_table'], ++$this->config['fileNumber']);
             $this->config['header_bath_number'] = $this->padWithZero(); 
             $this->config['fileName'].= $this->padWithZero().'.tmp';
+            
         else:
             $this->setFileName();
         endif;
@@ -135,7 +139,9 @@ class Parcelforce extends PDO{
         // initialized dr_consignment_number with database on first run
         if( !$this->isTableExists($this->config['consnum_table'])):
             $this->createTable($this->config['consnum_table']);
-            $this->insertTableValue($this->config['consnum_table'], $this->config['deliveryDetails']['dr_consignment_number']);        
+            $this->insertTableValue($this->config['consnum_table'], $this->config['deliveryDetails']['dr_consignment_number']);       
+            // increment number for next call
+            $this->insertTableValue($this->config['consnum_table'], ++$this->config['deliveryDetails']['dr_consignment_number']);            
         else:
             $this->getConsignmentNumber();
         endif;        
@@ -421,15 +427,15 @@ class Parcelforce extends PDO{
             $row = $this->getTableValue($this->config['filenum_table']);
 
             // reset file and batch numbers to 1 when reached 9999
-            if($row->filenum == 9999):
-                $row->filenum = 1;
+            if($row->{$this->config['filenum_table']['fieldName']} == 9999):
+                $row->{$this->config['filenum_table']['fieldName']} = 1;
                 $incrementFlag = false;
                 $this->resetTable($this->config['filenum_table']);
                 $this->createTable($this->config['filenum_table']);
-                $this->insertTableValue($this->config['filenum_table'], $row->filenum );
+                $this->insertTableValue($this->config['filenum_table'], $row->{$this->config['filenum_table']['fieldName']} );
             endif;
             
-            $this->config['fileNumber']         = $row->filenum ;
+            $this->config['fileNumber']         = $row->{$this->config['filenum_table']['fieldName']} ;
             // pad number left with zeros and set file name
             $this->config['fileName'].= $this->padWithZero().'.tmp';
             
@@ -441,7 +447,7 @@ class Parcelforce extends PDO{
             $this->config['header_bath_number'] = $this->padWithZero();            
           
             // increment file number for next run
-            $this->insertTableValue($this->config['filenum_table'], ++$row->filenum );
+            $this->insertTableValue($this->config['filenum_table'], ++$row->{$this->config['filenum_table']['fieldName']} );
             
     }
     /***/  
@@ -458,12 +464,12 @@ class Parcelforce extends PDO{
     public function getConsignmentNumber(){
         
         $row = $this->getTableValue($this->config['consnum_table']);
-        $this->config['deliveryDetails']['dr_consignment_number'] = $row->consnum;
+        $this->config['deliveryDetails']['dr_consignment_number'] = $row->{$this->config['consnum_table']['fieldName']};
         // set check digit for new consignment number
         $this->setCheckDigit();
         
         // increment number for next call
-        $this->insertTableValue($this->config['consnum_table'], ++$row->consnum);
+        $this->insertTableValue($this->config['consnum_table'], ++$row->{$this->config['consnum_table']['fieldName']});
         
     }
     /***/
