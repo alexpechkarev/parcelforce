@@ -2,3 +2,5 @@
 composer.phar
 composer.lock
 .DS_Store
+/src/Alexpechkarev/Parcelforce/PHP/files/
+/src/Alexpechkarev/Parcelforce/PHP/config.php
