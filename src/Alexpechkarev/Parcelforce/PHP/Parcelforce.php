@@ -216,7 +216,6 @@ class Parcelforce extends PDO{
             
             //merge with default delivery details
             $deliveryDetails = array_merge($this->config['deliveryDetails'], $item['deliveryDetails']); 
-            var_dump($this->config['deliveryDetails']);
             // check that mandatory fields specified [not null]
             try{
                 array_count_values($deliveryDetails);
@@ -257,7 +256,6 @@ class Parcelforce extends PDO{
             
             // increment record count            
             $this->config['trailer_record_count']++;
-            var_dump( $deliveryDetails['dr_consisgnment_check_digit']);
             $this->fileContent.= 
                                 $deliveryDetails['dr_record_type_indicator']
                                .$this->config['delimiterChar']
