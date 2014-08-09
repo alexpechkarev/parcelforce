@@ -58,10 +58,11 @@ class Parcelforce extends PDO{
     /**
      * Class constructor
      */
-   public function __construct() {
+   public function __construct($headerFileType = FALSE) {
 
        // loading config
        $this->config = include("config.php");
+       
        
        // validating config
        if(!is_array($this->config) || count($this->config) < 1):
@@ -79,6 +80,17 @@ class Parcelforce extends PDO{
             throw new RuntimeException('Check database settings: '.$e->getMessage());
         }
         
+       /**
+        * Set header type to SKEL
+        * Allowing UK Domestic services despatches only
+        * 
+        * default set to: DSCC - UK Domestic collection request
+        */
+       if(!empty($headerFileType)){
+           $this->config['header_file_type'] = 'SKEL';
+           $this->config['deliveryDetails']['dr_location_id'] = 1;
+       }        
+        
        // set date object
        $this->dateObj = new DateTime($this->config['collectionDate'], new DateTimeZone('Europe/London'));         
        // setting dispatch date
@@ -92,6 +104,7 @@ class Parcelforce extends PDO{
         
     }
     /***/
+    
     
     /**
      * Debug output method
@@ -160,16 +173,17 @@ class Parcelforce extends PDO{
      * - create consignment file 
      * - upload file
      * @param array $data - array of data
+     * @return string - File content
      */
     public function process($data){
         $this->setRecord($data);
         $this->fileContent.= $this->getFooter();
         $this->createFile();
         
-        #$this->uploadFile();
+        $this->uploadFile();
        
         
-        return true;
+        return $this->fileContent;
     }
     /***/
 
@@ -245,17 +259,29 @@ class Parcelforce extends PDO{
                                .$senderDetails['senderPostTown']
                                .$senderDetails['senderPostcode']
                                .$senderDetails['senderContactName']
-                               .$senderDetails['senderContactNumber']
-                               .$senderDetails['senderPaymentMethod']
-                               .$senderDetails['senderPaymentValue']
-                               .$senderDetails['senderVehicle']
-                               .$senderDetails['senderVehicle']
-                               ."\r\n";
+                               .$senderDetails['senderContactNumber'];
+            
+                               if($this->config['header_file_type'] === 'DSCC'):
+                                  $this->fileContent.= $senderDetails['senderVehicle'] 
+                                                        .$senderDetails['senderPaymentMethod']
+                                                        .$senderDetails['senderPaymentValue']
+                                                        .$this->config['delimiterChar'];
+                               endif;
+                                       
+         $this->fileContent.= "\r\n";
              
             // Setting detail record - deliver consignment to
             
-            // increment record count            
+            // increment record count     
+         
             $this->config['trailer_record_count']++;
+            
+//            Implement use of implode instead 
+//            config.php need modifying and method that generates consignment number
+//            
+//            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails);
+//            $this->fileContent.= $this->config['delimiterChar'] 
+//                               ."\r\n"; 
             $this->fileContent.= 
                                 $deliveryDetails['dr_record_type_indicator']
                                .$this->config['delimiterChar']
@@ -284,7 +310,7 @@ class Parcelforce extends PDO{
                                .$deliveryDetails['receiverPostTown']
                                .$deliveryDetails['receiverPostcode']
                                .$this->config['delimiterChar'] 
-                               ."\r\n"; 
+                               ."\r\n";  
             
             // increment consignment number for next run
             $this->setConsignmentNumber();
@@ -668,3 +694,4 @@ class Parcelforce extends PDO{
     /***/
     
 }
+

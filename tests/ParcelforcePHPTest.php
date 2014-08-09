@@ -104,6 +104,7 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
     }
     /***/
   
+        
 
     /**
      * Instantiate Parcelforce class
@@ -193,27 +194,6 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
     }
     /***/
     
-    /**
-     * Testing setRecord method
-     * @test
-     */
-//    public function test_set_record(){
-//
-//        $mock = m::mock('Alexpechkarev\Parcelforce\PHP\Parcelforce');
-//        $mock->shouldReceive('setRecord')
-//                ->once()
-//                ->with($this->senderData)
-//                ->andReturn('0+02+DSCC+ABC1234+P860565+0001+20140809+000000+000000+
-//1+02+PARCELFORCE WORLDWIDE+LYTHAM HOUSE+28 CALDECOTTE LAKE DRIVE+CALDECOTTE+++MILTON KEYNES+MK7 8LE++++++
-//2+02+AB1230010+SND+++SENDER REFERENCE+0+++1++FedEx UK+UNITS 23 & 24+COMMON BANK EMPLOYMENT AREA++CHORLEY+PR7 1NH+
-//1+02+FedEx UK+UNITS 23 & 24+COMMON BANK EMPLOYMENT AREA++++CHORLEY+PR7 1NH++++++
-//2+02+AB1230022+SND+++SENDER REFERENCE+0+++1++PARCELFORCE WORLDWIDE+LYTHAM HOUSE+28 CALDECOTTE LAKE DRIVE+CALDECOTTE+MILTON KEYNES+MK7 8LE+
-//9+02+6+');
-//
-//        $this->assertStringEqualsFile(__DIR__."/setRecordResponse",$mock->setRecord($this->senderData));
-//        
-//    }
-    /***/
     
     /**
      * Testing getFooter method

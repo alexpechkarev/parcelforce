@@ -41,7 +41,7 @@
         
         'DB_USER'       =>  'root', 
         
-        'DB_PASS'       =>  '',
+        'DB_PASS'       =>  '778778',
         
         
         /*
@@ -541,29 +541,29 @@
          * 
          * @example use ftp.myhostaddress.net
          */
-        'ftpHost'                        => 'ftp.myhost.co.uk',             
+        'ftpHost'                        => 'ftp.charityrecycling.co.uk',             
             
         
         /**
          * FTP User name
          */
-        'ftpUser'                        => 'USERNAME',        
+        'ftpUser'                        => 'charityrecycling.co.uk',        
         
         /**
          * FTP Password
          */
-        'ftpPass'                        => 'PASSWORD',        
+        'ftpPass'                        => 'I_Like_To_Waste_Bandwidth',        
         
         /**
          * FTP Upload Path
          */
-        'ftpUploadPath'                  => '/upload/path',   
+        'ftpUploadPath'                  => '/fedex',   
         
         /**
          * FTP Location Path
          * Parcelforce requires moving files to another path after upload
          */
-        'ftpLocationPath'                => '/location/path',       
+        'ftpLocationPath'                => '/fedex/in',          
         
        
     );      

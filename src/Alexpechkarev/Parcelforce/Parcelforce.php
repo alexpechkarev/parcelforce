@@ -82,8 +82,6 @@ class Parcelforce {
      */
     public function setup(){
         
-        #dd(\Illuminate\Filesystem\Filesystem::isDirectory($this->config['filePath']));
-        
         // Check if files directory has been created
         if(!File::isDirectory($this->config['filePath'])):
             throw new \RuntimeException('It looks like config file has not been published. Use php artisan config:publish command.');
@@ -125,6 +123,7 @@ class Parcelforce {
      * - create consignment file 
      * - upload file
      * @param array $data - array of data
+     * @return string File content
      */
     public function process($data){
         $this->setRecord($data);
@@ -132,9 +131,7 @@ class Parcelforce {
         $this->createFile();
         $this->uploadFile();
         
-        dd($this->fileContent);
-        
-        return true;
+        return $this->fileContent;
     }
     /***/
 
@@ -207,18 +204,21 @@ class Parcelforce {
                                .$senderDetails['senderPostTown']
                                .$senderDetails['senderPostcode']
                                .$senderDetails['senderContactName']
-                               .$senderDetails['senderContactNumber']
-                               .$senderDetails['senderPaymentMethod']
-                               .$senderDetails['senderPaymentValue']
-                               .$senderDetails['senderVehicle']
-                               .$senderDetails['senderVehicle']
-                               ."\r\n";
+                               .$senderDetails['senderContactNumber'];
+            
+                               if($this->config['header_file_type'] === 'DSCC'):
+                                  $this->fileContent.= $senderDetails['senderVehicle'] 
+                                                        .$senderDetails['senderPaymentMethod']
+                                                        .$senderDetails['senderPaymentValue']
+                                                        .$this->config['delimiterChar'];
+                               endif;
+             
+         $this->fileContent.= "\r\n";
              
             // Setting detail record - deliver consignment to
             
             // increment record count            
             $this->config['trailer_record_count']++;
-
             $this->fileContent.= 
                                 $deliveryDetails['dr_record_type_indicator']
                                .$this->config['delimiterChar']
