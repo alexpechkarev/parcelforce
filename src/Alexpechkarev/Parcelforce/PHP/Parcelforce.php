@@ -180,7 +180,7 @@ class Parcelforce extends PDO{
         $this->fileContent.= $this->getFooter();
         $this->createFile();
         
-        $this->uploadFile();
+        #$this->uploadFile();
        
         
         return $this->fileContent;

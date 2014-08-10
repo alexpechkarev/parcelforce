@@ -41,7 +41,7 @@
         
         'DB_USER'       =>  'root', 
         
-        'DB_PASS'       =>  '778778',
+        'DB_PASS'       =>  '',
         
         
         /*

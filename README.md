@@ -1,7 +1,7 @@
 Parcelforce API for Lavarel 4
 ======================
 
-
+[![Build Status](https://travis-ci.org/alexpechkarev/parcelforce.svg?branch=master)](https://travis-ci.org/alexpechkarev/parcelforce)
 
 Installation
 ------------
