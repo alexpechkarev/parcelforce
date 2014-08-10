@@ -151,11 +151,11 @@ class Parcelforce extends PDO{
         // initialized dr_consignment_number with database on first run
         if( !$this->isTableExists($this->config['consnum_table'])):
             $this->createTable($this->config['consnum_table']);
-            $this->insertTableValue($this->config['consnum_table'], $this->config['deliveryDetails']['dr_consignment_number']);       
+            $this->insertTableValue($this->config['consnum_table'], $this->config['dr_consignment_number']['number']);       
             // increment number for next call
-            $this->insertTableValue($this->config['consnum_table'], ($this->config['deliveryDetails']['dr_consignment_number']+1) );            
+            #$this->insertTableValue($this->config['consnum_table'], ($this->config['dr_consignment_number']['number']+1) );            
         else:
-            $this->setConsignmentNumber();
+            $this->getConsignmentNumber();
         endif;        
        
         
@@ -210,12 +210,24 @@ class Parcelforce extends PDO{
         
         while($cc->valid()):
             
-            $item = $cc->current();
+            $item = $cc->current();        
             $cc->next();
            
-            // merge values with default Collection Details array
-            $senderDetails = array_merge($this->config['collectionDetails'], $item['collectionDetails']);
+
+
+            // if sender details are given as parameter than merge with default ones
+            $senderDetails = isset($item['senderDetails'])
+                            ? array_merge($this->config['senderDetails'], $item['senderDetails'])
+                            : $this->config['senderDetails'];
             
+            // for SKEL file type remove following fields
+           if($this->config['header_file_type'] === 'SKEL'):
+              unset($senderDetails['senderContactName']);
+              unset($senderDetails['senderContactNumber']);
+              unset($senderDetails['senderVehicle']); 
+              unset($senderDetails['senderPaymentMethod']);
+              unset($senderDetails['senderPaymentValue']);
+           endif;      
             
             // check that mandatory fields specified [not null]
             try{
@@ -226,10 +238,20 @@ class Parcelforce extends PDO{
             }            
 
             // prepend fields with delimiter characters when needed
-            $this->addDelimiter($senderDetails, $item['collectionDetails']);
+            #$this->addDelimiter($senderDetails, $item['senderDetails']);
+            
+            
+            // generate consignment number
+            $this->config['deliveryDetails']['consignment_number'] = implode('', $this->config['dr_consignment_number']);
+            // increment consignment number for next package
+            $this->getConsignmentNumber();
+            $this->setConsignmentNumber();
+            
+            
             
             //merge with default delivery details
             $deliveryDetails = array_merge($this->config['deliveryDetails'], $item['deliveryDetails']); 
+            
             // check that mandatory fields specified [not null]
             try{
                 array_count_values($deliveryDetails);
@@ -239,81 +261,22 @@ class Parcelforce extends PDO{
             }             
             
             // prepend fields with delimiter characters when needed
-            $this->addDelimiter($deliveryDetails, $item['deliveryDetails']);
+            #$this->addDelimiter($deliveryDetails, $item['deliveryDetails']);
             
             
-            // Setting sender record - collect consignment from
+            // Setting sender record 
             
             // increment record count
             $this->config['trailer_record_count']++;
-            $this->fileContent.= 
-                                $senderDetails['sender_record_type_indicator']
-                               .$this->config['delimiterChar']
-                               .$senderDetails['sender_file_version_number']
-                               .$senderDetails['senderName']
-                               .$senderDetails['senderAddress1']
-                               .$senderDetails['senderAddress2']
-                               .$senderDetails['senderAddress3']                               
-                               .$senderDetails['senderAddress4']
-                               .$senderDetails['senderAddress5']
-                               .$senderDetails['senderPostTown']
-                               .$senderDetails['senderPostcode']
-                               .$senderDetails['senderContactName']
-                               .$senderDetails['senderContactNumber'];
-            
-                               if($this->config['header_file_type'] === 'DSCC'):
-                                  $this->fileContent.= $senderDetails['senderVehicle'] 
-                                                        .$senderDetails['senderPaymentMethod']
-                                                        .$senderDetails['senderPaymentValue']
-                                                        .$this->config['delimiterChar'];
-                               endif;
-                                       
-         $this->fileContent.= "\r\n";
-             
-            // Setting detail record - deliver consignment to
-            
+            $this->fileContent.= implode($this->config['delimiterChar'], $senderDetails)."\r\n";
+
             // increment record count     
-         
             $this->config['trailer_record_count']++;
             
-//            Implement use of implode instead 
-//            config.php need modifying and method that generates consignment number
-//            
-//            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails);
-//            $this->fileContent.= $this->config['delimiterChar'] 
-//                               ."\r\n"; 
-            $this->fileContent.= 
-                                $deliveryDetails['dr_record_type_indicator']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['dr_file_version_number']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['dr_consignment_prefix_number']
-                               .$deliveryDetails['dr_consignment_number']
-                               .$deliveryDetails['dr_consisgnment_check_digit']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['dr_service_id']
-                               .$deliveryDetails['dr_weekend_handling_code']
-                               .$this->config['delimiterChar']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['senderReference']
-                               .$this->config['delimiterChar']                    
-                               .$deliveryDetails['dr_location_id']
-                               .$this->config['delimiterChar']                    
-                               .$deliveryDetails['contractNumber']
-                               .$this->config['delimiterChar']                     
-                               .$deliveryDetails['numberOfItems']
-                               .$deliveryDetails['consignmentWeight']
-                               .$deliveryDetails['receiverName']
-                               .$deliveryDetails['receiverAddress1']
-                               .$deliveryDetails['receiverAddress2']
-                               .$deliveryDetails['receiverAddress3']
-                               .$deliveryDetails['receiverPostTown']
-                               .$deliveryDetails['receiverPostcode']
-                               .$this->config['delimiterChar'] 
-                               ."\r\n";  
+            // Setting delivery record 
+            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails);
+            $this->fileContent.= $this->config['delimiterChar'] ."\r\n";   
             
-            // increment consignment number for next run
-            $this->setConsignmentNumber();
                         
       endwhile;
         
@@ -360,21 +323,28 @@ class Parcelforce extends PDO{
     
     /**
      * Get consignment number from databse and assign to config
-     * Format integer
-     * Max/Min - 6 
+     * @uses setCheckDigit
      */
-    public function setConsignmentNumber(){
+    public function getConsignmentNumber(){
         
         $row = $this->getTableValue($this->config['consnum_table']);
-        $this->config['deliveryDetails']['dr_consignment_number'] = $row->{$this->config['consnum_table']['fieldName']};
+        $this->config['dr_consignment_number']['number'] = $row->{$this->config['consnum_table']['fieldName']};
         // set check digit for new consignment number
         $this->setCheckDigit();
         
-        // increment number for next call
-        $this->insertTableValue($this->config['consnum_table'], $row->{$this->config['consnum_table']['fieldName']}+1);
-        
     }
     /***/
+    
+    /**
+     * Increment consignment number in databse
+     */
+    public function setConsignmentNumber(){
+        
+        // increment number for next call
+        $this->insertTableValue($this->config['consnum_table'], ($this->config['dr_consignment_number']['number']+1));
+        
+    }
+    /***/    
           
     
     
@@ -399,12 +369,12 @@ class Parcelforce extends PDO{
      */
     public function setCheckDigit(){
         
-        $sum =      ($this->config['deliveryDetails']['dr_consignment_number'][0] * 4) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][1] * 2) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][2] * 3) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][3] * 5) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][4] * 9) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][5] * 7) ;
+        $sum =      ($this->config['dr_consignment_number']['number'][0] * 4) 
+                +   ($this->config['dr_consignment_number']['number'][1] * 2) 
+                +   ($this->config['dr_consignment_number']['number'][2] * 3) 
+                +   ($this->config['dr_consignment_number']['number'][3] * 5) 
+                +   ($this->config['dr_consignment_number']['number'][4] * 9) 
+                +   ($this->config['dr_consignment_number']['number'][5] * 7) ;
         
         $rem = $sum % 11;
         $checkdigit = 0;
@@ -417,7 +387,7 @@ class Parcelforce extends PDO{
             $checkdigit = 11 - $rem;
         endif;
         
-        $this->config['deliveryDetails']['dr_consisgnment_check_digit'] = $checkdigit;
+        $this->config['dr_consignment_number']['check_digit'] = $checkdigit;
     }
     /***/     
     
@@ -694,4 +664,3 @@ class Parcelforce extends PDO{
     /***/
     
 }
-
