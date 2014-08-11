@@ -21,7 +21,7 @@ Features
 Requirements
 ------------
 
-User must be [**Parcelforce**](http://www.parcelforce.com/) customer        
+Must be [**Parcelforce**](http://www.parcelforce.com/) customer        
 PHP >= 5.3        
 MySQL
         
@@ -36,7 +36,7 @@ Installation
 To install edit `composer.json` and add following line:
 
 ```php
-"alexpechkarev/parcelforce": "dev-master"
+"parcelforce/exrpesstransfer": "dev-master"
 ```
 
 Run `composer update`
