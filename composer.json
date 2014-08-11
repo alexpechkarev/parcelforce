@@ -29,7 +29,6 @@
 		"classmap": [
                         "src/",
 			"src/models",
-                        "src/migrations",
                         "tests/"
 		],                 
         "psr-0": {
