@@ -56,42 +56,17 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
         $this->pf = new Parcelforce(include(__DIR__.'/../src/Alexpechkarev/Parcelforce/PHP/config.php'));
         $this->config = $this->pf->getConfig();
         $this->senderData = array(
-                    array(
-                        "collectionDetails" =>array(
-                            "senderName"    =>'PARCELFORCE WORLDWIDE', 
-                            "senderAddress1"=>"LYTHAM HOUSE", 
-                            "senderAddress2"=>'28 CALDECOTTE LAKE DRIVE',
-                            "senderAddress3"=>'CALDECOTTE',
-                            "senderPostTown"=>'MILTON KEYNES',        
-                            "senderPostcode"=>"MK7 8LE"
-                            ),
-                        "deliveryDetails"=>array(
-                            'receiverName'      =>"FedEx UK",
-                            'receiverAddress1'  =>'UNITS 23 & 24',
-                            'receiverAddress2'  =>'COMMON BANK EMPLOYMENT AREA',
-                            'receiverPostTown' =>'CHORLEY',
-                            'receiverPostcode'  =>'PR7 1NH'
-                            )
-                        ),
-
-                    array(
-                        "collectionDetails" =>array(
-                            "senderName"    =>'FedEx UK', 
-                            "senderAddress1"=>"UNITS 23 & 24", 
-                            "senderAddress2"=>'COMMON BANK EMPLOYMENT AREA',
-                            "senderPostTown"=>'CHORLEY',        
-                            "senderPostcode"=>"PR7 1NH"
-                            ),
-                        "deliveryDetails"=>array(
-                            'receiverName'      =>"PARCELFORCE WORLDWIDE",
-                            'receiverAddress1'  =>'LYTHAM HOUSE',
-                            'receiverAddress2'  =>'28 CALDECOTTE LAKE DRIVE',
-                            'receiverAddress3'  =>'CALDECOTTE',
-                            'receiverPostTown' =>'MILTON KEYNES',
-                            'receiverPostcode'  =>'MK7 8LE'
-                        )                
-                   )           
-                );
+            array(
+                "deliveryDetails"=>array(
+                    'receiverName'      =>"MR CUSTOMER",
+                    'receiverAddress1'  =>'100 CUSTOMER SOLUTIONS STREET',
+                    'receiverPostTown'  =>'MILTON KEYNES',
+                    'receiverPostcode'  =>'MK9 9AB'
+                    )
+                )
+            );
+         
+               
     }
     /***/
     
@@ -142,54 +117,21 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
     }
     /***/
     
-    /**
-     * Test addDelimiter method
-     * @test
-     */
-    public function test_add_delimiter(){
-        $arr1 = array("foo"=>"bar", "baz"=>"foo", "one"=>"+", "two"=>"+", "three"=>"three");
-        $arr2 = array("foo"=>"bar", "baz"=>"foo", "one"=>"+", "two"=>"+", "three"=>"three");
-        $this->pf->addDelimiter($arr1, $arr2);
-        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['foo']);
-        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['baz']);
-        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['one']);
-        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['two']);
-        $this->assertStringStartsWith($this->config['delimiterChar'], $arr1['three']);
-    }
-    /***/
     
     /**
      * Testing setHeader method
      * @test
      */
-    public function test_set_header(){
+    public function test_get_header(){
         
-        $fileContent = $this->config['header_record_type_indicator']
-                .$this->config['delimiterChar']
-                .$this->config['header_file_version_number']
-                .$this->config['delimiterChar']
-                .$this->config['header_file_type']                
-                .$this->config['delimiterChar']
-                .$this->config['header_customer_account']
-                .$this->config['delimiterChar']
-                .$this->config['header_generic_contract']
-                .$this->config['delimiterChar']
-                .$this->config['header_bath_number']
-                .$this->config['delimiterChar']
-                .$this->config['header_dispatch_date']
-                .$this->config['delimiterChar']
-                .$this->config['header_dispatch_time']
-                .$this->config['delimiterChar']
-                .$this->config['header_last_collection']
-                .$this->config['delimiterChar']
-                ."\r\n";
+        $header = implode($this->config['delimiterChar'], $this->config['header_record'])."\r\n";
        
         $mock = m::mock('Alexpechkarev\Parcelforce\PHP\Parcelforce', $this->config);
-        $mock->shouldReceive('setHeader')
+        $mock->shouldReceive('getHeader')
                 ->once()
-                ->andReturn($this->pf->getFileContent());
+                ->andReturn($this->pf->getHeader());
         
-        $resp = strcmp( $fileContent, $mock->setHeader() );
+        $resp = strcmp( $header, $mock->getHeader() );
         $this->assertTrue( empty( $resp ) );
     }
     /***/
@@ -199,16 +141,11 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
      * Testing getFooter method
      * @test
      */
-    public function test_set_footer(){
+    public function test_get_footer(){
         
         $this->pf->setRecord($this->senderData);
         $this->config = $this->pf->getConfig();
-        $footer = $this->config['trailer_record_type_indicator']
-                .$this->config['delimiterChar']
-                .$this->config['trailer_file_version_number']
-                .$this->config['delimiterChar']
-                .$this->config['trailer_record_count']
-                .$this->config['delimiterChar'];
+        $footer = implode($this->config['delimiterChar'], $this->config['footer_record']);
         
         $mock = m::mock('Alexpechkarev\Parcelforce\PHP\Parcelforce', $this->config);
         $mock->shouldReceive('getFooter')

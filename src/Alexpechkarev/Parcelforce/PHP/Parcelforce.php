@@ -84,23 +84,15 @@ class Parcelforce extends PDO{
         * Set header type to SKEL
         * Allowing UK Domestic services despatches only
         * 
-        * default set to: DSCC - UK Domestic collection request
+        * config default:  DSCC - UK Domestic collection request
         */
        if(!empty($headerFileType)){
-           $this->config['header_file_type'] = 'SKEL';
+           $this->config['header_record']['header_file_type'] = 'SKEL';
            $this->config['deliveryDetails']['dr_location_id'] = 1;
        }        
-        
-       // set date object
-       $this->dateObj = new DateTime($this->config['collectionDate'], new DateTimeZone('Europe/London'));         
-       // setting dispatch date
-       $this->config['header_dispatch_date'] = $this->dateObj->format('Ymd');
-       
+               
        // initiate checks
-       $this->setup();       
-       // set header content
-       $this->fileContent.= $this->getHeader(); 
-              
+       $this->setup();                   
         
     }
     /***/
@@ -141,7 +133,7 @@ class Parcelforce extends PDO{
             $this->insertTableValue($this->config['filenum_table'], $this->config['fileNumber']);
             // increment for next run
             $this->insertTableValue($this->config['filenum_table'], ($this->config['fileNumber']+1) );
-            $this->config['header_bath_number'] = $this->padWithZero(); 
+            $this->config['header_record']['header_bath_number'] = $this->padWithZero(); 
             $this->config['fileName'].= $this->padWithZero().'.tmp';
             
         else:
@@ -151,9 +143,7 @@ class Parcelforce extends PDO{
         // initialized dr_consignment_number with database on first run
         if( !$this->isTableExists($this->config['consnum_table'])):
             $this->createTable($this->config['consnum_table']);
-            $this->insertTableValue($this->config['consnum_table'], $this->config['dr_consignment_number']['number']);       
-            // increment number for next call
-            #$this->insertTableValue($this->config['consnum_table'], ($this->config['dr_consignment_number']['number']+1) );            
+            $this->insertTableValue($this->config['consnum_table'], $this->config['dr_consignment_number']['number']);                 
         else:
             $this->getConsignmentNumber();
         endif;        
@@ -173,14 +163,28 @@ class Parcelforce extends PDO{
      * - create consignment file 
      * - upload file
      * @param array $data - array of data
-     * @return string - File content
+     * @param boolean $upload - indicates whenever files to be uploaded to FTP or not, default TRUE
+     * @return string - generated file content
      */
-    public function process($data){
+    public function process($data, $upload = TRUE){
+        
+        // set collection date to default config value
+        if($this->config['header_record']['header_dispatch_date'] === 'CCYYMMDD'):
+            $this->setDate();
+        endif;
+       // set header record
+        $this->fileContent = $this->getHeader();  
+        // process consignment data
         $this->setRecord($data);
+        // set trailer record
         $this->fileContent.= $this->getFooter();
+        //create file
         $this->createFile();
         
-        #$this->uploadFile();
+        // upload file
+        if(!empty($upload)):
+            $this->uploadFile();
+        endif;
        
         
         return $this->fileContent;
@@ -215,13 +219,13 @@ class Parcelforce extends PDO{
            
 
 
-            // if sender details are given as parameter than merge with default ones
+            // if sender details are given as parameter than merge with default
             $senderDetails = isset($item['senderDetails'])
                             ? array_merge($this->config['senderDetails'], $item['senderDetails'])
                             : $this->config['senderDetails'];
             
             // for SKEL file type remove following fields
-           if($this->config['header_file_type'] === 'SKEL'):
+           if($this->config['header_record']['header_file_type'] === 'SKEL'):
               unset($senderDetails['senderContactName']);
               unset($senderDetails['senderContactNumber']);
               unset($senderDetails['senderVehicle']); 
@@ -235,12 +239,19 @@ class Parcelforce extends PDO{
             }catch(ErrorException $e){
                 throw new InvalidArgumentException("Mandatory field ". array_search(null, $senderDetails, true). " must not be NULL!");
 
-            }            
-
-            // prepend fields with delimiter characters when needed
-            #$this->addDelimiter($senderDetails, $item['senderDetails']);
+            }       
+            
+            // Setting sender record 
+            
+            // increment record count
+            $this->config['footer_record']['trailer_record_count']++;
+            $this->fileContent.= implode($this->config['delimiterChar'], $senderDetails)."\r\n";
             
             
+            
+            
+            
+                        
             // generate consignment number
             $this->config['deliveryDetails']['consignment_number'] = implode('', $this->config['dr_consignment_number']);
             // increment consignment number for next package
@@ -259,23 +270,12 @@ class Parcelforce extends PDO{
                 throw new InvalidArgumentException("Mandatory field ". array_search(null, $deliveryDetails, true). " must not be NULL!");
 
             }             
-            
-            // prepend fields with delimiter characters when needed
-            #$this->addDelimiter($deliveryDetails, $item['deliveryDetails']);
-            
-            
-            // Setting sender record 
-            
-            // increment record count
-            $this->config['trailer_record_count']++;
-            $this->fileContent.= implode($this->config['delimiterChar'], $senderDetails)."\r\n";
 
             // increment record count     
-            $this->config['trailer_record_count']++;
+            $this->config['footer_record']['trailer_record_count']++;
             
             // Setting delivery record 
-            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails);
-            $this->fileContent.= $this->config['delimiterChar'] ."\r\n";   
+            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails)."\r\n";
             
                         
       endwhile;
@@ -294,18 +294,16 @@ class Parcelforce extends PDO{
     */     
     
     /**
-     * Prepend array values with delimiter character when needed
-     * @param array $arr - array of values
-     * @param array $master - config array
+     * Setting collection date at run time
+     * @param type $date
      */
-    public function addDelimiter(&$arr, &$master){
-            
-            array_walk($arr, function(&$it) use($master){                
-                if(in_array($it, $master) && $it != '+'):
-                    $it =  $this->config['delimiterChar'].$it;
-                endif;
-            }); 
-            
+    public function setDate($date = FALSE){
+        
+        $this->config['collectionDate'] = $date ? $date : $this->config['collectionDate'];
+       // set date object
+       $this->dateObj = new DateTime($this->config['collectionDate'], new DateTimeZone($this->config['timeZone']));         
+       // setting dispatch date
+       $this->config['header_record']['header_dispatch_date'] = $this->dateObj->format('Ymd');        
     }
     /***/
 
@@ -344,7 +342,17 @@ class Parcelforce extends PDO{
         $this->insertTableValue($this->config['consnum_table'], ($this->config['dr_consignment_number']['number']+1));
         
     }
-    /***/    
+    /***/
+    
+    /**
+     * Drop database tables
+     */
+    public function reset(){
+        
+        $this->dropTable($this->config['filenum_table']);
+        $this->dropTable($this->config['consnum_table']);
+    }
+    /***/
           
     
     
@@ -394,50 +402,25 @@ class Parcelforce extends PDO{
     
     /*
     |-----------------------------------------------------------------------
-    | HEader / Footer  methods
+    | Header / Footer  methods
     |-----------------------------------------------------------------------
     */ 
     
     /**
-     * Get header content
+     * Get header record
      * 
      * @return string
      */
     public function getHeader(){
-        
-       return $this->config['header_record_type_indicator']
-                .$this->config['delimiterChar']
-                .$this->config['header_file_version_number']
-                .$this->config['delimiterChar']
-                .$this->config['header_file_type']                
-                .$this->config['delimiterChar']
-                .$this->config['header_customer_account']
-                .$this->config['delimiterChar']
-                .$this->config['header_generic_contract']
-                .$this->config['delimiterChar']
-                .$this->config['header_bath_number']
-                .$this->config['delimiterChar']
-                .$this->config['header_dispatch_date']
-                .$this->config['delimiterChar']
-                .$this->config['header_dispatch_time']
-                .$this->config['delimiterChar']
-                .$this->config['header_last_collection']
-                .$this->config['delimiterChar']
-                ."\r\n";
+       return implode($this->config['delimiterChar'], $this->config['header_record'])."\r\n";
     }
     /***/
     
     /**
-     * Get trailer footer
+     * Get trailer record
      */
-    public function getFooter(){
-        
-        return $this->config['trailer_record_type_indicator']
-                .$this->config['delimiterChar']
-                .$this->config['trailer_file_version_number']
-                .$this->config['delimiterChar']
-                .$this->config['trailer_record_count']
-                .$this->config['delimiterChar'];
+    public function getFooter(){   
+        return implode($this->config['delimiterChar'], $this->config['footer_record']);
     }
     /***/    
     
@@ -450,24 +433,22 @@ class Parcelforce extends PDO{
     
     
     /**
-     * Get file name
+     * Set file name
      * Also set batch number
      */
     public function setFileName(){
             
-            $incrementFlag = true;
             $row = $this->getTableValue($this->config['filenum_table']);
 
             // reset file and batch numbers to 1 when reached 9999
-            if($row->{$this->config['filenum_table']['fieldName']} == 9999):
+            if($row->{$this->config['filenum_table']['fieldName']} == 10000):
                 $row->{$this->config['filenum_table']['fieldName']} = 1;
-                $incrementFlag = false;
                 $this->resetTable($this->config['filenum_table']);
                 $this->createTable($this->config['filenum_table']);
                 $this->insertTableValue($this->config['filenum_table'], $row->{$this->config['filenum_table']['fieldName']} );
             endif;
             
-            $this->config['fileNumber']         = $row->{$this->config['filenum_table']['fieldName']} ;
+            $this->config['fileNumber'] = $row->{$this->config['filenum_table']['fieldName']} ;
             // pad number left with zeros and set file name
             $this->config['fileName'].= $this->padWithZero().'.tmp';
             
@@ -476,7 +457,7 @@ class Parcelforce extends PDO{
              * Start at 1 and increment by 1 per batch After 9999 is reached, restart at 1
              */
             // pad number left with zeros and set file name
-            $this->config['header_bath_number'] = $this->padWithZero();            
+            $this->config['header_record']['header_bath_number'] = $this->padWithZero();            
           
             // increment file number for next run
             $this->insertTableValue($this->config['filenum_table'], $row->{$this->config['filenum_table']['fieldName']}+1 );

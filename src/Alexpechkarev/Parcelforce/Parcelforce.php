@@ -36,7 +36,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Collection;
 use Alexpechkarev\Parcelforce\models\ConsNumber;
 use Alexpechkarev\Parcelforce\models\FileNumber;
 
@@ -59,16 +58,14 @@ class Parcelforce {
     
     
     /**
-     * Class constructor
+     * Init cinfig file and run config cheks
      */
    public function __construct($config) {
         
        $this->config = $config;       
-       $this->dateObj = Carbon::parse($this->config['collectionDate']);          
-       $this->config['header_dispatch_date'] = $this->dateObj->format('Ymd');
-        
+       
+       // initiate checks
        $this->setup();       
-       $this->setHeader(); 
        
         
     }
@@ -94,22 +91,37 @@ class Parcelforce {
         
         
         // initialized fileNumber with database on first run
-        if( FileNumber::all()->count() === 0):
-            FileNumber::create(array('filenum' => $this->config['fileNumber'] ));
-            $this->config['header_bath_number'] = $this->padWithZero(); 
+        if( !Schema::hasTable($this->config['filenum_table']['tableName']) ):
+            
+            $this->createTable($this->config['filenum_table']);           
+            FileNumber::create(array($this->config['filenum_table']['fieldName'] => $this->config['fileNumber'] ));
+            
+            $this->config['header_record']['header_bath_number'] = $this->padWithZero(); 
             $this->config['fileName'].= $this->padWithZero().'.tmp';
+            $this->setFileNumber();
             
         else:
             $this->setFileName();
         endif;
         
         // initialized dr_consignment_number with database on first run
-        if( ConsNumber::all()->count() === 0):
-            ConsNumber::create(array('consnum' => $this->config['deliveryDetails']['dr_consignment_number'] ));            
+        if( !Schema::hasTable($this->config['consnum_table']['tableName'])):
+            
+            $this->createTable($this->config['consnum_table']);             
+            ConsNumber::create(array($this->config['consnum_table']['fieldName'] => $this->config['dr_consignment_number']['number'] ));            
         else:
             $this->getConsignmentNumber();
         endif;        
        
+       /**
+        * Set header type to SKEL
+        * Allowing UK Domestic services despatches only
+        * 
+        * config default: DSCC - UK Domestic collection request
+        */
+       if($this->config['header_record']['header_file_type'] === 'SKEL'){
+           $this->config['deliveryDetails']['dr_location_id'] = 1;
+       }         
         
         return true;
     }
@@ -125,11 +137,26 @@ class Parcelforce {
      * @param array $data - array of data
      * @return string File content
      */
-    public function process($data){
+    public function process($data, $upload = TRUE){
+        
+       // set collection date to default config value
+        if($this->config['header_record']['header_dispatch_date'] === 'CCYYMMDD'):
+            $this->setDate();
+        endif;
+       // set header record
+        $this->fileContent = $this->getHeader();  
+        // process consignment data
         $this->setRecord($data);
+        // set trailer record
         $this->fileContent.= $this->getFooter();
+        //create file
         $this->createFile();
-        $this->uploadFile();
+        
+        // upload file
+        if(!empty($upload)):
+            $this->uploadFile();
+        endif;
+       
         
         return $this->fileContent;
     }
@@ -150,16 +177,30 @@ class Parcelforce {
         endif;
         
         $data = func_get_args();  
-        $cc = new Collection($data[0]);
+        $cc = new \ArrayIterator($data[0]);
         
         if($cc->count() < 1):
             throw new \InvalidArgumentException("Invaild collection data.");
         endif;
         
-        $cc->each(function($item){
+        while( $cc->valid() ):
+            
+            $item = $cc->current();        
+            $cc->next();
            
-            // merge values with default Collection Details array
-            $senderDetails = array_merge($this->config['collectionDetails'], $item['collectionDetails']);
+            // if sender details are given as parameter than merge with default
+            $senderDetails = isset($item['senderDetails'])
+                            ? array_merge($this->config['senderDetails'], $item['senderDetails'])
+                            : $this->config['senderDetails'];
+            
+            // for SKEL file type remove following fields
+           if($this->config['header_record']['header_file_type'] === 'SKEL'):
+              unset($senderDetails['senderContactName']);
+              unset($senderDetails['senderContactNumber']);
+              unset($senderDetails['senderVehicle']); 
+              unset($senderDetails['senderPaymentMethod']);
+              unset($senderDetails['senderPaymentValue']);
+           endif;              
             
             
             // check that mandatory fields specified [not null]
@@ -170,11 +211,26 @@ class Parcelforce {
 
             }            
 
-            // prepend fields with delimiter characters when needed
-            $this->addDelimiter($senderDetails, $item['collectionDetails']);
+            // Setting sender record 
+            
+            // increment record count
+            $this->config['footer_record']['trailer_record_count']++;
+            $this->fileContent.= implode($this->config['delimiterChar'], $senderDetails)."\r\n";
+            
+            
+            
+            
+            
+            // generate consignment number
+            $this->config['deliveryDetails']['consignment_number'] = implode('', $this->config['dr_consignment_number']);
+            // increment consignment number for next package
+            $this->getConsignmentNumber();
+            $this->setConsignmentNumber();
+            
             
             //merge with default delivery details
             $deliveryDetails = array_merge($this->config['deliveryDetails'], $item['deliveryDetails']); 
+            
             // check that mandatory fields specified [not null]
             try{
                 array_count_values($deliveryDetails);
@@ -183,76 +239,15 @@ class Parcelforce {
 
             }             
             
-            // prepend fields with delimiter characters when needed
-            $this->addDelimiter($deliveryDetails, $item['deliveryDetails']);
+
+            // increment record count     
+            $this->config['footer_record']['trailer_record_count']++;
             
+            // Setting delivery record 
+            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails)."\r\n";  
             
-            // Setting sender record - collect consignment from
-            
-            // increment record count
-            $this->config['trailer_record_count']++;
-            $this->fileContent.= 
-                                $senderDetails['sender_record_type_indicator']
-                               .$this->config['delimiterChar']
-                               .$senderDetails['sender_file_version_number']
-                               .$senderDetails['senderName']
-                               .$senderDetails['senderAddress1']
-                               .$senderDetails['senderAddress2']
-                               .$senderDetails['senderAddress3']                               
-                               .$senderDetails['senderAddress4']
-                               .$senderDetails['senderAddress5']
-                               .$senderDetails['senderPostTown']
-                               .$senderDetails['senderPostcode']
-                               .$senderDetails['senderContactName']
-                               .$senderDetails['senderContactNumber'];
-            
-                               if($this->config['header_file_type'] === 'DSCC'):
-                                  $this->fileContent.= $senderDetails['senderVehicle'] 
-                                                        .$senderDetails['senderPaymentMethod']
-                                                        .$senderDetails['senderPaymentValue']
-                                                        .$this->config['delimiterChar'];
-                               endif;
-             
-         $this->fileContent.= "\r\n";
-             
-            // Setting detail record - deliver consignment to
-            
-            // increment record count            
-            $this->config['trailer_record_count']++;
-            $this->fileContent.= 
-                                $deliveryDetails['dr_record_type_indicator']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['dr_file_version_number']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['dr_consignment_prefix_number']
-                               .$deliveryDetails['dr_consignment_number']
-                               .$deliveryDetails['dr_consisgnment_check_digit']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['dr_service_id']
-                               .$deliveryDetails['dr_weekend_handling_code']
-                               .$this->config['delimiterChar']
-                               .$this->config['delimiterChar']
-                               .$deliveryDetails['senderReference']
-                               .$this->config['delimiterChar']                    
-                               .$deliveryDetails['dr_location_id']
-                               .$this->config['delimiterChar']                    
-                               .$deliveryDetails['contractNumber']
-                               .$this->config['delimiterChar']                     
-                               .$deliveryDetails['numberOfItems']
-                               .$deliveryDetails['consignmentWeight']
-                               .$deliveryDetails['receiverName']
-                               .$deliveryDetails['receiverAddress1']
-                               .$deliveryDetails['receiverAddress2']
-                               .$deliveryDetails['receiverAddress3']
-                               .$deliveryDetails['receiverPostTown']
-                               .$deliveryDetails['receiverPostcode']
-                               .$this->config['delimiterChar'] 
-                               ."\r\n";  
-            
-            // increment consignment number
-            $this->getConsignmentNumber();            
                         
-        });
+      endwhile;
         
         
         
@@ -261,39 +256,26 @@ class Parcelforce {
     /***/
 
     
+    /*
+    |-----------------------------------------------------------------------
+    | Helper methods
+    |-----------------------------------------------------------------------
+    */      
+    
     /**
-     * Prepend array values with delimiter character when needed
-     * @param array $arr - array of values
-     * @param array $master - config array
+     * Setting collection date at run time
+     * @param type $date
      */
-    public function addDelimiter(&$arr, &$master){
-            
-            array_walk($arr, function(&$it) use($master){                
-                if(in_array($it, $master) && $it != '+'):
-                    $it =  $this->config['delimiterChar'].$it;
-                endif;
-            }); 
-            
-    }
-    /***/
-
-    /**
-     * Droping and re-creating table to store file number
-     */
-    protected function resetFileNumberTable(){
+    public function setDate($date = FALSE){
         
-        // drop file number table
-        Schema::drop('tbl_parcelforce_filenum');
-        // creat table
-        Schema::create('tbl_parcelforce_filenum', function(Blueprint $table)
-        {
-            $table->increments('id');
-            $table->integer('filenum');
-        });
-        
-        FileNumber::create(array('filenum' => $this->config['fileNumber'] ));        
+       $this->config['collectionDate'] = $date ? $date : $this->config['collectionDate'];
+       // set date object
+       $this->dateObj = Carbon::parse($this->config['collectionDate'], $this->config['timeZone']);         
+       // setting dispatch date
+       $this->config['header_record']['header_dispatch_date'] = $this->dateObj->format('Ymd');        
     }
-    /***/
+    /***/    
+   
 
     /**
      * Pad left with zeros
@@ -307,22 +289,23 @@ class Parcelforce {
     /***/
     
     /**
-     * Get file name
+     * Set file name
      * Also set batch number
      */
     public function setFileName(){
             
-            $incrementFlag = true;
-            $fn = FileNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
+            $this->config['fileNumber'] = FileNumber::orderBy('id', 'DESC')
+                                            ->first()
+                                            ->{$this->config['filenum_table']['fieldName']};
             
             // reset file and batch numbers to 1 when reached 9999
-            if($fn[0]['filenum'] == 9999):
-                $fn[0]['filenum'] = 1;
-                $incrementFlag = false;
-                $this->resetFileNumberTable();
+            if($this->config['fileNumber'] == 10000):
+                $this->config['fileNumber'] = 1;
+                $this->dropTable($this->config['filenum_table']);
+                $this->createTable($this->config['filenum_table']);
+                FileNumber::create(array($this->config['filenum_table']['fieldName'] => $this->config['fileNumber'] )); 
             endif;
             
-            $this->config['fileNumber']         = $fn[0]['filenum'];
             // pad number left with zeros and set file name
             $this->config['fileName'].= $this->padWithZero().'.tmp';
             
@@ -331,7 +314,7 @@ class Parcelforce {
              * Start at 1 and increment by 1 per batch After 9999 is reached, restart at 1
              */
             // pad number left with zeros and set file name
-            $this->config['header_bath_number'] = $this->padWithZero();            
+            $this->config['header_record']['header_bath_number'] = $this->padWithZero();            
           
             // incremnt file number for next run
             $this->setFileNumber(); 
@@ -343,7 +326,7 @@ class Parcelforce {
      * Get file name
      */
     public function setFileNumber(){   
-            FileNumber::create(array('filenum' => ++$this->config['fileNumber'] ));
+            FileNumber::create(array($this->config['filenum_table']['fieldName'] => ($this->config['fileNumber']+1) ));
     }
     /***/     
    
@@ -356,13 +339,12 @@ class Parcelforce {
      */
     public function getConsignmentNumber(){
         
-        $fn = ConsNumber::orderBy('id', 'DESC')->take(1)->get()->toArray();
-        $this->config['deliveryDetails']['dr_consignment_number'] = $fn[0]['consnum'];
+        $this->config['dr_consignment_number']['number'] = ConsNumber::orderBy('id', 'DESC')                                            
+                                            ->first()
+                                            ->{$this->config['consnum_table']['fieldName']};
+       
         // set check digit for new consignment number
         $this->setCheckDigit();
-        
-        // increment number for next call
-        $this->setConsignmentNumber();
         
     }
     /***/
@@ -374,9 +356,20 @@ class Parcelforce {
      * Max/Min - 6 
      */
     public function setConsignmentNumber(){
-        ConsNumber::create(array('consnum' => ++$this->config['deliveryDetails']['dr_consignment_number'] ));
+        ConsNumber::create(array($this->config['consnum_table']['fieldName'] => ($this->config['dr_consignment_number']['number']+1) ));
     }
     /***/    
+    
+    /**
+     * Drop database tables
+     */
+    public function reset(){
+        // drop file number table
+        $this->dropTable($this->config['filenum_table']);
+        // drop consignment number table
+        $this->dropTable($this->config['consnum_table']);
+    }
+    /***/
     
     
     /**
@@ -400,12 +393,12 @@ class Parcelforce {
      */
     public function setCheckDigit(){
         
-        $sum =      ($this->config['deliveryDetails']['dr_consignment_number'][0] * 4) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][1] * 2) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][2] * 3) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][3] * 5) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][4] * 9) 
-                +   ($this->config['deliveryDetails']['dr_consignment_number'][5] * 7) ;
+        $sum =      ($this->config['dr_consignment_number']['number'][0] * 4) 
+                +   ($this->config['dr_consignment_number']['number'][1] * 2) 
+                +   ($this->config['dr_consignment_number']['number'][2] * 3) 
+                +   ($this->config['dr_consignment_number']['number'][3] * 5) 
+                +   ($this->config['dr_consignment_number']['number'][4] * 9) 
+                +   ($this->config['dr_consignment_number']['number'][5] * 7) ;
         
         $rem = $sum % 11;
         $checkdigit = 0;
@@ -418,51 +411,92 @@ class Parcelforce {
             $checkdigit = 11 - $rem;
         endif;
         
-        $this->config['deliveryDetails']['dr_consisgnment_check_digit'] = $checkdigit;
+        $this->config['dr_consignment_number']['check_digit'] = $checkdigit;
     }
     /***/     
     
+    
+    /*
+    |-----------------------------------------------------------------------
+    | Header / Footer  methods
+    |-----------------------------------------------------------------------
+    */ 
+    
     /**
-     * Set hader
+     * Get hader record
      */
-    public function setHeader(){
-        
-        $this->fileContent = $this->config['header_record_type_indicator']
-                .$this->config['delimiterChar']
-                .$this->config['header_file_version_number']
-                .$this->config['delimiterChar']
-                .$this->config['header_file_type']                
-                .$this->config['delimiterChar']
-                .$this->config['header_customer_account']
-                .$this->config['delimiterChar']
-                .$this->config['header_generic_contract']
-                .$this->config['delimiterChar']
-                .$this->config['header_bath_number']
-                .$this->config['delimiterChar']
-                .$this->config['header_dispatch_date']
-                .$this->config['delimiterChar']
-                .$this->config['header_dispatch_time']
-                .$this->config['delimiterChar']
-                .$this->config['header_last_collection']
-                .$this->config['delimiterChar']
-                ."\r\n";
+    public function getHeader(){
+        return implode($this->config['delimiterChar'], $this->config['header_record'])."\r\n";
     }
     /***/
     
     /**
-     * Get trailer footer
+     * Get trailer record
      */
-    public function getFooter(){
-        
-        return $this->config['trailer_record_type_indicator']
-                .$this->config['delimiterChar']
-                .$this->config['trailer_file_version_number']
-                .$this->config['delimiterChar']
-                .$this->config['trailer_record_count']
-                .$this->config['delimiterChar'];
+    public function getFooter(){        
+        return implode($this->config['delimiterChar'], $this->config['footer_record']);
     }
     /***/    
     
+    
+
+    
+    /*
+    |-----------------------------------------------------------------------
+    | Databse helper methods
+    |-----------------------------------------------------------------------
+    */ 
+    
+    
+    /**
+     * Creating database table
+     * @param array $tbl - ["tableName"=>"tbl_name", "fieldName"=>"fld_name"]
+     * @throws \InvalidArgumentException
+     */
+    public function createTable($tbl){
+        
+        if(is_array($tbl) 
+                && array_key_exists('tableName', $tbl) 
+                && array_key_exists('fieldName', $tbl)):
+        
+        Schema::create($tbl['tableName'], function(Blueprint $table) use($tbl)
+        {
+            $table->increments('id');
+            $table->integer($tbl['fieldName']);
+        }); 
+        
+        else:
+            throw new \InvalidArgumentException('Invalid agruments given. Expecting array ["tableName"=>"tbl_name", "fieldName"=>fld_name"]');
+        endif;
+    }
+    /***/
+    
+    
+    
+    /**
+     * Drop database table
+     * @param array $tbl - ["tableName"=>"tbl_name", "fieldName"=>fld_name"]
+     * @throws \InvalidArgumentException
+     */
+    public function dropTable($tbl){
+        
+        if(is_array($tbl) 
+                && array_key_exists('tableName', $tbl) 
+                && array_key_exists('fieldName', $tbl)):
+        
+        Schema::dropIfExists($tbl['tableName']);
+        
+        else:
+            throw new \InvalidArgumentException('Invalid agruments given. Expecting array ["tableName"=>"tbl_name, "fieldName"=>fld_name]');
+        endif;
+    }
+    /***/    
+    
+    /*
+    |-----------------------------------------------------------------------
+    | File methods
+    |-----------------------------------------------------------------------
+    */    
     
     /**
      * Creating file and writing consignment details
@@ -528,13 +562,11 @@ class Parcelforce {
     
     
     
-    /**
-     * 
-     * 
-     * Getters
-     * 
-     * 
-     */
+    /*
+    |-----------------------------------------------------------------------
+    | Getters
+    |-----------------------------------------------------------------------
+    */ 
     
     /**
      * Get file content

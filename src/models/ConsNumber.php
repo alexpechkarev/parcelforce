@@ -51,5 +51,11 @@ class ConsNumber extends Eloquent {
         
         public $timestamps = false;
 
+        public function __construct(array $attributes = array()) {
+            parent::__construct($attributes);
+            
+            $this->table = \Config::get('parcelforce::config.consnum_table.tableName');
+            $this->fillable = array(\Config::get('parcelforce::config.consnum_table.fieldName'));
+        }        
 
 }

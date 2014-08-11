@@ -46,13 +46,6 @@ chmod o+w app/config/packages/alexpechkarev/parcelforce/files
 
 ```
 
-Publish package migrations.
-
-```php
-
-php artisan migrate --package="alexpechkarev/parcelforce"
-
-```
 
 Testing
 -------------

@@ -66,97 +66,103 @@
         |-----------------------------------------------------------------------
         */
         
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1
-         * Mandatory/Optional   - M
-         * Comment              - Set to 0
-         */
-        'header_record_type_indicator'     => 0,
-        
-        /**
-         * Fomat                - numeric 
-         * Min/Max length       - 2
-         * Mandatory/Optional   - M
-         * Comment              - Set to '02'
-         */        
-        'header_file_version_number'       => '02',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 4
-         * Mandatory/Optional   - M
-         * Comment              - One of domestic file types: SKEL, DSCA or DSCC
-         * for more detail of Domestic file types 
-         * refere to File Specification for Data Exchange using Parcelforce Table 2.1
+        'header_record' => array(
+            
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1
+             * Mandatory/Optional   - M
+             * Comment              - Set to 0
+             */
+            'header_record_type_indicator'     => 0,
 
-         */        
-        'header_file_type'                 => 'DSCC',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 7
-         * Mandatory/Optional   - M
-         * Comment              - Customer account number as provided by Parcelforce (Format: 3 alpha, 4 numeric)
+            /**
+             * Fomat                - numeric 
+             * Min/Max length       - 2
+             * Mandatory/Optional   - M
+             * Comment              - Set to '02'
+             */        
+            'header_file_version_number'       => '02',
 
-         */        
-        'header_customer_account'          => 'ABC1234',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 7
-         * Mandatory/Optional   - M
-         * Comment              - Generic contract number as provided by Parcelforce. 
-         *                        If the contract number is to be supplied in Detail record (field 10) 
-         *                        then the string MULTIPL should be present in this field
-         *
-         *
-         */        
-        'header_generic_contract'          => 'P860565',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1-4
-         * Mandatory/Optional   - M
-         * Comment              - Unique number per batch, to be created bythe 
-         *                        source systemStart at 1 and increment by 1 per batch
-         *                        After 9999 is reached, restart at 1
-         *
-         *
-         */         
-        'header_bath_number'               => 1,
-        
-        /**
-         * Fomat                - numeric (CCYYMMDD)
-         * Min/Max length       - 8
-         * Mandatory/Optional   - M
-         * Comment              - Date consignment is to be collected by Parcelforce.
-         *
-         *
-         */        
-        'header_dispatch_date'             => 'CCYYMMDD',
-        
-        /**
-         * Fomat                - alphanumeric (CCYYMMDD)
-         * Min/Max length       - 6
-         * Mandatory/Optional   - M
-         * Comment              - For File Type SKEL – either the Despatch Time 
-         *                        or 6 zeros if time is not available. 
-         *                        For file types DSCC or DSCA – The earliest collection time 
-         *                        for an ad-hoc collections or 6 zeros if a time is not available
-         *
-         */         
-        'header_dispatch_time'             => '000000',
-        
-        /**
-         * Fomat                - numeric (HHMMSS)
-         * Min/Max length       - 6
-         * Mandatory/Optional   - M
-         * Comment              - ONLY used in DSCC or DSCA files. 
-         *                          The latest time parcel can be collected, 
-         *                          or 6 zeros if a time is not available.
-         */         
-        'header_last_collection'           => '000000',
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 4
+             * Mandatory/Optional   - M
+             * Comment              - One of domestic file types: SKEL, DSCA or DSCC
+             * for more detail of Domestic file types 
+             * refere to File Specification for Data Exchange using Parcelforce Table 2.1
+
+             */        
+            'header_file_type'                 => 'DSCC',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 7
+             * Mandatory/Optional   - M
+             * Comment              - Customer account number as provided by Parcelforce (Format: 3 alpha, 4 numeric)
+
+             */        
+            'header_customer_account'          => 'ABC1234',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 7
+             * Mandatory/Optional   - M
+             * Comment              - Generic contract number as provided by Parcelforce. 
+             *                        If the contract number is to be supplied in Detail record (field 10) 
+             *                        then the string MULTIPL should be present in this field
+             *
+             *
+             */        
+            'header_generic_contract'          => 'C000001',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1-4
+             * Mandatory/Optional   - M
+             * Comment              - Unique number per batch, to be created bythe 
+             *                        source systemStart at 1 and increment by 1 per batch
+             *                        After 9999 is reached, restart at 1
+             *
+             *
+             */         
+            'header_bath_number'               => 1,
+
+            /**
+             * Fomat                - numeric (CCYYMMDD)
+             * Min/Max length       - 8
+             * Mandatory/Optional   - M
+             * Comment              - Date consignment is to be collected by Parcelforce.
+             *
+             *
+             */        
+            'header_dispatch_date'             => 'CCYYMMDD',
+
+            /**
+             * Fomat                - alphanumeric (CCYYMMDD)
+             * Min/Max length       - 6
+             * Mandatory/Optional   - M
+             * Comment              - For File Type SKEL – either the Despatch Time 
+             *                        or 6 zeros if time is not available. 
+             *                        For file types DSCC or DSCA – The earliest collection time 
+             *                        for an ad-hoc collections or 6 zeros if a time is not available
+             *
+             */         
+            'header_dispatch_time'             => '000000',
+
+            /**
+             * Fomat                - numeric (HHMMSS)
+             * Min/Max length       - 6
+             * Mandatory/Optional   - M
+             * Comment              - ONLY used in DSCC or DSCA files. 
+             *                          The latest time parcel can be collected, 
+             *                          or 6 zeros if a time is not available.
+             */         
+            'header_last_collection'           => '000000',
+            
+            'filler_field'                     => '',
+            
+        ),
         
         
         
@@ -441,7 +447,7 @@
              */        
             "numberOfItems"                 => 1,             
                         
-            'filler_field'                  => '',
+            'filler_field_1'                => '',
 
             /**
              * Fomat                - alphanumeric 
@@ -489,7 +495,9 @@
              * Mandatory/Optional   - M
              * Comment              - Outward and inward parts should be separated by a space
              */        
-            'receiverPostcode'            => null
+            'receiverPostcode'            => null,
+            
+            'filler_field_2'              => '',            
                         
          
           ),
@@ -500,30 +508,34 @@
         |-----------------------------------------------------------------------
         */         
         
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1
-         * Mandatory/Optional   - M
-         * Comment              - Set to 9
-         */         
-        'trailer_record_type_indicator'   => 9,
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 2
-         * Mandatory/Optional   - M
-         * Comment              - Set to '02'
-         */         
-        'trailer_file_version_number'     => '02',
-        
-        /**
-         * Fomat                - alphanumeric 
-         * Min/Max length       - 1 - 6
-         * Mandatory/Optional   - M
-         * Comment              - The total number of records present in the batch, 
-         *                          including the Header, Sender andTrailer Records.
-         */         
-        'trailer_record_count'            => 2,        
+        'footer_record' => array(
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1
+             * Mandatory/Optional   - M
+             * Comment              - Set to 9
+             */         
+            'trailer_record_type_indicator'   => 9,
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 2
+             * Mandatory/Optional   - M
+             * Comment              - Set to '02'
+             */         
+            'trailer_file_version_number'     => '02',
+
+            /**
+             * Fomat                - alphanumeric 
+             * Min/Max length       - 1 - 6
+             * Mandatory/Optional   - M
+             * Comment              - The total number of records present in the batch, 
+             *                          including the Header, Sender andTrailer Records.
+             */         
+            'trailer_record_count'            => 2, 
+            
+            'filler_field'                    => '',            
+         ),
         
         /*
         |-----------------------------------------------------------------------
@@ -562,15 +574,6 @@
          * Time zone - defauklt Europe/London
          */
         'timeZone'                        => 'Europe/London',
-        
-        /**
-         * FTP Host
-         * 
-         * @example use ftp.myhostaddress.net
-         */
-        'ftpHost'                        => 'ftp.myhost.co.uk',             
-            
-        
         /**
          * FTP User name
          */
@@ -590,7 +593,7 @@
          * FTP Location Path
          * Parcelforce requires moving files to another path after upload
          */
-        'ftpLocationPath'                => '/location/path',           
+        'ftpLocationPath'                => '/location/path',        
         
      
         

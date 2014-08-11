@@ -33,6 +33,7 @@ namespace Alexpechkarev\Parcelforce\models;
 
 use \Illuminate\Database\Eloquent\Model as Eloquent;
 
+
 class FileNumber extends Eloquent {
 
 	/**
@@ -52,4 +53,10 @@ class FileNumber extends Eloquent {
         public  $timestamps = false;
 
 
+        public function __construct(array $attributes = array()) {
+            parent::__construct($attributes);
+            
+            $this->table = \Config::get('parcelforce::config.filenum_table.tableName');
+            $this->fillable = array(\Config::get('parcelforce::config.filenum_table.fieldName'));
+        }
 }
