@@ -33,7 +33,7 @@ Installation
 ------------
 
 To install run following 
-```php
+```sh
     composer require alexpechkarev/parcelforce  dev-master
 ```
 
@@ -43,7 +43,7 @@ Configuration
 
 Once installed, register Laravel service provider, in your `app/config/app.php`:
 
-```php
+```sh
 'providers' => array(
 	...
     'Parcelforce\ExpressTransfer\ParcelforceServiceProvider',
@@ -52,7 +52,7 @@ Once installed, register Laravel service provider, in your `app/config/app.php`:
 
 Publish configuration file:
 
-```php
+```sh
 php artisan config:publish parcelforce/expresstransfer --path vendor/alexpechkarev/parcelforce/src/config/
 ```
 
@@ -60,7 +60,7 @@ Folder `files` must be writable by web server, all generated file will be stored
 Name and location of this folder can be specified in the configuration file by editing `filePath` value, 
 if change ensure it's writable by we server.
 
-```php
+```sh
 chmod o+w app/config/packages/parcelforce/expresstransfer/files
 ```
 
@@ -138,22 +138,27 @@ This value can also be specified at runtime using `Parcelforce::setDate()` metho
     Parcelforce::setDate("next Monday");
     Parcelforce::process($senderData);
 ```
-Date and Time handled using
-In laravel package dates handled using 
+In the package `date` handled using:
+ 
  - [**Carbon**](https://github.com/briannesbitt/Carbon) extension for Laravel packages 
- - [**DateTime**] class in PHP standalone class  
+ - [**DateTime**](http://php.net/manual/en/book.datetime.php) class in PHP standalone class  
 
 Following formats accepted by `setDate()` method:
+
 [**Relative Formats**](http://php.net/manual/en/datetime.formats.relative.php)
+
  - tomorrow
  - next wednesday
  - this thursday
-...
+ - ....
+
+
 [**Date Formats**](http://php.net/manual/en/datetime.formats.date.php)
+
  - 2014-08-11
  - 08/11/2014
  - 20140811
-...
+ - ....
 
 
 
@@ -204,7 +209,7 @@ See `config.php` for table and fields names.
 
 
 
-Laravel PHPUnit Testing
+PHPUnit Testing
 -------------
 
 PHPUnit testing require [**Mockery**](https://github.com/padraic/mockery) flexible PHP mock object framework.
@@ -217,11 +222,12 @@ In Laravel package test file needs copying from package folder into `app/tests/`
 cp vendor/alexpechkarev/parcelforce/tests/ParcelforceLaravelTest.txt app/tests/ParcelforceTest.php
 ```
 And then run test:
+```sh
 phpunit app/tests/ParcelforceTest.php
 ```
 
 To test PHP standalone file use following command:
-```php
+```sh
     phpunit vendor/alexpechkarev/parcelforce/tests/ParcelforcePHPTest.php
 ```
 
