@@ -25,21 +25,22 @@
  */
 
 /**
- * Description of Parcelforce
+ * Package generates pre-advice electronic file that required by Parcelforce exrpessTransfer solution.
  *
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
+namespace Parcelforce\ExpressTransfer;
 
-namespace Alexpechkarev\Parcelforce\PHP;
+use Carbon\Carbon;
 
-use \PDO;
-use \PDOException;
-use \RuntimeException;
-use \DateTime;
-use \DateTimeZone;
-use \InvalidArgumentException;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Parcelforce\ExpressTransfer\models\ConsNumber;
+use Parcelforce\ExpressTransfer\models\FileNumber;
 
-class Parcelforce extends PDO{
+
+class Parcelforce {
 
     /*
     |--------------------------------------------------------------------------
@@ -55,58 +56,21 @@ class Parcelforce extends PDO{
     protected $ftpConn;
    
     
+    
     /**
-     * Class constructor
+     * Init cinfig file and run config cheks
      */
-   public function __construct($headerFileType = FALSE) {
-
-       // loading config
-       $this->config = include("config.php");
-       
-       
-       // validating config
-       if(!is_array($this->config) || count($this->config) < 1):
-           throw new RuntimeException('Please check config.php exists.');
-       endif;
-       
-       // init database connection
-        try{
-            parent::__construct('mysql:host='.$this->config['DB_HOST'].';dbname='.$this->config['DB_NAME'],
-                    $this->config['DB_USER'],
-                    $this->config['DB_PASS'],
-                    array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES UTF8"));
-            
-        }catch(PDOException $e){
-            throw new RuntimeException('Check database settings: '.$e->getMessage());
-        }
+   public function __construct($config) {
         
-       /**
-        * Set header type to SKEL
-        * Allowing UK Domestic services despatches only
-        * 
-        * config default:  DSCC - UK Domestic collection request
-        */
-       if(!empty($headerFileType)){
-           $this->config['header_record']['header_file_type'] = 'SKEL';
-           $this->config['deliveryDetails']['dr_location_id'] = 1;
-       }        
-               
+       $this->config = $config;       
+       
        // initiate checks
-       $this->setup();                   
+       $this->setup();       
+       
         
     }
     /***/
     
-    
-    /**
-     * Debug output method
-     * @param mixed $d
-     */
-    public static function dd($d){
-        
-        die(var_dump($d));
-    }
-    /***/
     
     /**
      * Perform necessary checks
@@ -115,60 +79,67 @@ class Parcelforce extends PDO{
      */
     public function setup(){
         
-       
         // Check if files directory has been created
-        if(!is_dir($this->config['filePath'])):
-            throw new RuntimeException('Please ensure files directory exists.');
+        if(!File::isDirectory($this->config['filePath'])):
+            throw new \RuntimeException('It looks like config file has not been published. Use php artisan config:publish command.');
         endif;
         
         // Check if files directory has been created
-        if(!is_writable($this->config['filePath'])):
-            throw new RuntimeException('Please make sure that files directory is writable.');
+        if(!File::isWritable($this->config['filePath'])):
+            throw new \RuntimeException('Please make sure that files directory is writable.');
         endif;
-                
-        // create table if not exists
-        if( !$this->isTableExists($this->config['filenum_table'])):
+        
+        
+        // initialized fileNumber with database on first run
+        if( !Schema::hasTable($this->config['filenum_table']['tableName']) ):
             
-            $this->createTable($this->config['filenum_table'], $this->config['fileNumber']); 
-            $this->insertTableValue($this->config['filenum_table'], $this->config['fileNumber']);
-            // increment for next run
-            $this->insertTableValue($this->config['filenum_table'], ($this->config['fileNumber']+1) );
+            $this->createTable($this->config['filenum_table']);           
+            FileNumber::create(array($this->config['filenum_table']['fieldName'] => $this->config['fileNumber'] ));
+            
             $this->config['header_record']['header_bath_number'] = $this->padWithZero(); 
             $this->config['fileName'].= $this->padWithZero().'.tmp';
+            $this->setFileNumber();
             
         else:
             $this->setFileName();
-        endif;        
+        endif;
         
         // initialized dr_consignment_number with database on first run
-        if( !$this->isTableExists($this->config['consnum_table'])):
-            $this->createTable($this->config['consnum_table']);
-            $this->insertTableValue($this->config['consnum_table'], $this->config['dr_consignment_number']['number']);                 
+        if( !Schema::hasTable($this->config['consnum_table']['tableName'])):
+            
+            $this->createTable($this->config['consnum_table']);             
+            ConsNumber::create(array($this->config['consnum_table']['fieldName'] => $this->config['dr_consignment_number']['number'] ));            
         else:
             $this->getConsignmentNumber();
         endif;        
        
+       /**
+        * Set header type to SKEL
+        * Allowing UK Domestic services despatches only
+        * 
+        * config default: DSCC - UK Domestic collection request
+        */
+       if($this->config['header_record']['header_file_type'] === 'SKEL'){
+           $this->config['deliveryDetails']['dr_location_id'] = 1;
+       }         
         
         return true;
     }
     /***/    
     
     
-    
     /**
      * Initiate process
-     * 
      * - generate file content
      * - generate footer content
      * - create consignment file 
      * - upload file
      * @param array $data - array of data
-     * @param boolean $upload - indicates whenever files to be uploaded to FTP or not, default TRUE
-     * @return string - generated file content
+     * @return string File content
      */
     public function process($data, $upload = TRUE){
         
-        // set collection date to default config value
+       // set collection date to default config value
         if($this->config['header_record']['header_dispatch_date'] === 'CCYYMMDD'):
             $this->setDate();
         endif;
@@ -202,23 +173,21 @@ class Parcelforce extends PDO{
     public function setRecord(){
         
         if(func_num_args() != 1):
-            throw new InvalidArgumentException("Invaild number of arguments given. Expecting an array.");
+            throw new \InvalidArgumentException("Invaild number of arguments given. Expecting an array.");
         endif;
         
-        $data = func_get_args(); 
+        $data = func_get_args();  
         $cc = new \ArrayIterator($data[0]);
         
         if($cc->count() < 1):
-            throw new InvalidArgumentException("Invaild collection data.");
+            throw new \InvalidArgumentException("Invaild collection data.");
         endif;
         
-        while($cc->valid()):
+        while( $cc->valid() ):
             
             $item = $cc->current();        
             $cc->next();
            
-
-
             // if sender details are given as parameter than merge with default
             $senderDetails = isset($item['senderDetails'])
                             ? array_merge($this->config['senderDetails'], $item['senderDetails'])
@@ -231,16 +200,17 @@ class Parcelforce extends PDO{
               unset($senderDetails['senderVehicle']); 
               unset($senderDetails['senderPaymentMethod']);
               unset($senderDetails['senderPaymentValue']);
-           endif;      
+           endif;              
+            
             
             // check that mandatory fields specified [not null]
             try{
                 array_count_values($senderDetails);
-            }catch(ErrorException $e){
-                throw new InvalidArgumentException("Mandatory field ". array_search(null, $senderDetails, true). " must not be NULL!");
+            }catch(\ErrorException $e){
+                throw new \InvalidArgumentException("Mandatory field ". array_search(null, $senderDetails, true). " must not be NULL!");
 
-            }       
-            
+            }            
+
             // Setting sender record 
             
             // increment record count
@@ -251,13 +221,11 @@ class Parcelforce extends PDO{
             
             
             
-                        
             // generate consignment number
             $this->config['deliveryDetails']['consignment_number'] = implode('', $this->config['dr_consignment_number']);
             // increment consignment number for next package
             $this->getConsignmentNumber();
             $this->setConsignmentNumber();
-            
             
             
             //merge with default delivery details
@@ -266,16 +234,17 @@ class Parcelforce extends PDO{
             // check that mandatory fields specified [not null]
             try{
                 array_count_values($deliveryDetails);
-            }catch(ErrorException $e){
-                throw new InvalidArgumentException("Mandatory field ". array_search(null, $deliveryDetails, true). " must not be NULL!");
+            }catch(\ErrorException $e){
+                throw new \InvalidArgumentException("Mandatory field ". array_search(null, $deliveryDetails, true). " must not be NULL!");
 
             }             
+            
 
             // increment record count     
             $this->config['footer_record']['trailer_record_count']++;
             
             // Setting delivery record 
-            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails)."\r\n";
+            $this->fileContent.= implode($this->config['delimiterChar'], $deliveryDetails)."\r\n";  
             
                         
       endwhile;
@@ -291,7 +260,7 @@ class Parcelforce extends PDO{
     |-----------------------------------------------------------------------
     | Helper methods
     |-----------------------------------------------------------------------
-    */     
+    */      
     
     /**
      * Setting collection date at run time
@@ -299,13 +268,14 @@ class Parcelforce extends PDO{
      */
     public function setDate($date = FALSE){
         
-        $this->config['collectionDate'] = $date ? $date : $this->config['collectionDate'];
+       $this->config['collectionDate'] = $date ? $date : $this->config['collectionDate'];
        // set date object
-       $this->dateObj = new DateTime($this->config['collectionDate'], new DateTimeZone($this->config['timeZone']));         
+       $this->dateObj = Carbon::parse($this->config['collectionDate'], $this->config['timeZone']);         
        // setting dispatch date
        $this->config['header_record']['header_dispatch_date'] = $this->dateObj->format('Ymd');        
     }
-    /***/
+    /***/    
+   
 
     /**
      * Pad left with zeros
@@ -318,42 +288,88 @@ class Parcelforce extends PDO{
     }
     /***/
     
+    /**
+     * Set file name
+     * Also set batch number
+     */
+    public function setFileName(){
+            
+            $this->config['fileNumber'] = FileNumber::orderBy('id', 'DESC')
+                                            ->first()
+                                            ->{$this->config['filenum_table']['fieldName']};
+            
+            // reset file and batch numbers to 1 when reached 9999
+            if($this->config['fileNumber'] == 10000):
+                $this->config['fileNumber'] = 1;
+                $this->dropTable($this->config['filenum_table']);
+                $this->createTable($this->config['filenum_table']);
+                FileNumber::create(array($this->config['filenum_table']['fieldName'] => $this->config['fileNumber'] )); 
+            endif;
+            
+            // pad number left with zeros and set file name
+            $this->config['fileName'].= $this->padWithZero().'.tmp';
+            
+            /**
+             * Unique number per batch, to be created by the source system 
+             * Start at 1 and increment by 1 per batch After 9999 is reached, restart at 1
+             */
+            // pad number left with zeros and set file name
+            $this->config['header_record']['header_bath_number'] = $this->padWithZero();            
+          
+            // incremnt file number for next run
+            $this->setFileNumber(); 
+            
+    }
+    /***/  
+    
+    /**
+     * Get file name
+     */
+    public function setFileNumber(){   
+            FileNumber::create(array($this->config['filenum_table']['fieldName'] => ($this->config['fileNumber']+1) ));
+    }
+    /***/     
+   
+
     
     /**
      * Get consignment number from databse and assign to config
-     * @uses setCheckDigit
+     * Format integer
+     * Max/Min - 6 
      */
     public function getConsignmentNumber(){
         
-        $row = $this->getTableValue($this->config['consnum_table']);
-        $this->config['dr_consignment_number']['number'] = $row->{$this->config['consnum_table']['fieldName']};
+        $this->config['dr_consignment_number']['number'] = ConsNumber::orderBy('id', 'DESC')                                            
+                                            ->first()
+                                            ->{$this->config['consnum_table']['fieldName']};
+       
         // set check digit for new consignment number
         $this->setCheckDigit();
         
     }
     /***/
+       
     
     /**
-     * Increment consignment number in databse
+     * Set consignment number by incrementing it's value by 1 and store db
+     * Format integer
+     * Max/Min - 6 
      */
     public function setConsignmentNumber(){
-        
-        // increment number for next call
-        $this->insertTableValue($this->config['consnum_table'], ($this->config['dr_consignment_number']['number']+1));
-        
+        ConsNumber::create(array($this->config['consnum_table']['fieldName'] => ($this->config['dr_consignment_number']['number']+1) ));
     }
-    /***/
+    /***/    
     
     /**
      * Drop database tables
      */
     public function reset(){
-        
+        // drop file number table
         $this->dropTable($this->config['filenum_table']);
+        // drop consignment number table
         $this->dropTable($this->config['consnum_table']);
     }
     /***/
-          
     
     
     /**
@@ -386,7 +402,7 @@ class Parcelforce extends PDO{
         
         $rem = $sum % 11;
         $checkdigit = 0;
-
+        
         if((11 -$rem) == 10):
             $checkdigit = 0;
         elseif((11 - $rem) == 11):
@@ -407,76 +423,92 @@ class Parcelforce extends PDO{
     */ 
     
     /**
-     * Get header record
-     * 
-     * @return string
+     * Get hader record
      */
     public function getHeader(){
-       return implode($this->config['delimiterChar'], $this->config['header_record'])."\r\n";
+        return implode($this->config['delimiterChar'], $this->config['header_record'])."\r\n";
     }
     /***/
     
     /**
      * Get trailer record
      */
-    public function getFooter(){   
+    public function getFooter(){        
         return implode($this->config['delimiterChar'], $this->config['footer_record']);
     }
     /***/    
     
     
+
+    
+    /*
+    |-----------------------------------------------------------------------
+    | Databse helper methods
+    |-----------------------------------------------------------------------
+    */ 
+    
+    
+    /**
+     * Creating database table
+     * @param array $tbl - ["tableName"=>"tbl_name", "fieldName"=>"fld_name"]
+     * @throws \InvalidArgumentException
+     */
+    public function createTable($tbl){
+        
+        if(is_array($tbl) 
+                && array_key_exists('tableName', $tbl) 
+                && array_key_exists('fieldName', $tbl)):
+        
+        Schema::create($tbl['tableName'], function(Blueprint $table) use($tbl)
+        {
+            $table->increments('id');
+            $table->integer($tbl['fieldName']);
+        }); 
+        
+        else:
+            throw new \InvalidArgumentException('Invalid agruments given. Expecting array ["tableName"=>"tbl_name", "fieldName"=>fld_name"]');
+        endif;
+    }
+    /***/
+    
+    
+    
+    /**
+     * Drop database table
+     * @param array $tbl - ["tableName"=>"tbl_name", "fieldName"=>fld_name"]
+     * @throws \InvalidArgumentException
+     */
+    public function dropTable($tbl){
+        
+        if(is_array($tbl) 
+                && array_key_exists('tableName', $tbl) 
+                && array_key_exists('fieldName', $tbl)):
+        
+        Schema::dropIfExists($tbl['tableName']);
+        
+        else:
+            throw new \InvalidArgumentException('Invalid agruments given. Expecting array ["tableName"=>"tbl_name, "fieldName"=>fld_name]');
+        endif;
+    }
+    /***/    
+    
     /*
     |-----------------------------------------------------------------------
     | File methods
     |-----------------------------------------------------------------------
-    */     
-    
-    
-    /**
-     * Set file name
-     * Also set batch number
-     */
-    public function setFileName(){
-            
-            $row = $this->getTableValue($this->config['filenum_table']);
-
-            // reset file and batch numbers to 1 when reached 9999
-            if($row->{$this->config['filenum_table']['fieldName']} == 10000):
-                $row->{$this->config['filenum_table']['fieldName']} = 1;
-                $this->resetTable($this->config['filenum_table']);
-                $this->createTable($this->config['filenum_table']);
-                $this->insertTableValue($this->config['filenum_table'], $row->{$this->config['filenum_table']['fieldName']} );
-            endif;
-            
-            $this->config['fileNumber'] = $row->{$this->config['filenum_table']['fieldName']} ;
-            // pad number left with zeros and set file name
-            $this->config['fileName'].= $this->padWithZero().'.tmp';
-            
-            /**
-             * Unique number per batch, to be created by the source system 
-             * Start at 1 and increment by 1 per batch After 9999 is reached, restart at 1
-             */
-            // pad number left with zeros and set file name
-            $this->config['header_record']['header_bath_number'] = $this->padWithZero();            
-          
-            // increment file number for next run
-            $this->insertTableValue($this->config['filenum_table'], $row->{$this->config['filenum_table']['fieldName']}+1 );
-            
-    }
-    /***/ 
-    
+    */    
     
     /**
      * Creating file and writing consignment details
      * 
      * @return boolean
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function createFile(){
                                           
         // write to the file
-        if(file_put_contents($this->config['filePath'].$this->config['fileName'], $this->fileContent) === false):
-           throw new RuntimeException('Unable to write to: '.$this->config['fileName']);
+        if (File::put($this->config['filePath'].$this->config['fileName'], $this->fileContent) === false):
+            throw new \RuntimeException('Unable to write to: '.$this->config['fileName']);
         endif;         
         
         return true;
@@ -487,7 +519,7 @@ class Parcelforce extends PDO{
     /**
      * Uploading file to FTP
      * 
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function uploadFile(){
         
@@ -496,12 +528,12 @@ class Parcelforce extends PDO{
         
         
         if(empty($this->ftpConn)):
-            throw new RuntimeException("Unable to connect to FTP - ".$this->config['ftpHost']);
+            throw new \RuntimeException("Unable to connect to FTP - ".$this->config['ftpHost']);
         endif;
 
         // attempt login
          if(ftp_login($this->ftpConn, $this->config['ftpUser'], $this->config['ftpPass']) === false):
-                 throw new RuntimeException("Unable to FTP login with - ".$this->config['ftpUser']);
+                 throw new \RuntimeException("Unable to FTP login with - ".$this->config['ftpUser']);
          endif;
                  
          // turn passive mode on
@@ -525,87 +557,6 @@ class Parcelforce extends PDO{
          
          // close conection
          ftp_close($this->ftpConn);
-    }
-    /***/
-    
-    
-    /*
-    |-----------------------------------------------------------------------
-    | Databse helper methods
-    |-----------------------------------------------------------------------
-    */  
-    
-    /**
-     * Is given table exists
-     * @param string $table
-     * @return boolean
-     */
-    public function isTableExists($tableData){
-        $st = parent::prepare('SHOW TABLES LIKE :table');
-        $st->bindParam(':table', $tableData['tableName'], PDO::PARAM_STR);
-        $st->execute();
-        
-        return ( $st->rowCount() > 0);
-    }
-    /***/
-    
-    /**
-     * Retrive data from given table
-     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
-     * @return object stdClass
-     */
-    public function getTableValue($tableData){
-        
-        $st = parent::prepare('SELECT '.$tableData['fieldName']
-                .' FROM '.$tableData['tableName']
-                .' ORDER BY id DESC LIMIT 1');
-        $st->execute();
-        return $st->fetchObject();
-    }
-    /***/
-    
-    /**
-     * Insert value into given table
-     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
-     * @param mixed $value
-     * @return boolean
-     */
-    public function insertTableValue($tableData, $value){
-        
-        $st = parent::prepare('INSERT INTO '.$tableData['tableName']
-                .' ('.$tableData['fieldName'].')'
-                .' VALUES(:value)');
-        
-        $st->bindParam(':value', $value, PDO::PARAM_INT);
-        return $st->execute();
-    }
-    /***/
-    
-    /**
-     * Creating default table
-     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
-     */
-    public function createTable($tableData){
-        
-        $sqlCreate = "
-            CREATE TABLE `".$tableData['tableName']."` (
-              `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-              `".$tableData['fieldName']."` int(11) NOT NULL,
-              PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
-            ";        
-        parent::exec($sqlCreate);
-        
-    }
-    /***/
-    
-    /**
-     * Drop and create given table with default value
-     * @param array $tableData - ['tableName'=>'mytable', 'fieldName'=>'myfieldname']
-     */
-    public function dropTable($tableData){
-        
-        parent::exec('DROP TABLE IF EXISTS '.$tableData['tableName']);
     }
     /***/
     

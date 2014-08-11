@@ -25,7 +25,7 @@
  */
 
 /**
- * Description of ParcelforceTest
+ * Package generates pre-advice electronic file that required by Parcelforce exrpessTransfer solution.
  *
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
@@ -33,7 +33,7 @@
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Foundation\Testing\TestCase;
-use Alexpechkarev\Parcelforce\Parcelforce;
+use Parcelforce\ExpressTransfer\Parcelforce;
 use Mockery as m;
 
 
@@ -51,7 +51,7 @@ class ParcelforceTest extends TestCase{
      */
     public function setUp() {
         parent::setUp();
-        App::register('Alexpechkarev\Parcelforce\ParcelforceServiceProvider');
+        App::register('Parcelforce\ExpressTransfer\ParcelforceServiceProvider');
         
         $this->pf = new Parcelforce(Config::get('parcelforce::config'));
         $this->config = $this->pf->getConfig();
@@ -100,7 +100,7 @@ class ParcelforceTest extends TestCase{
      * @test
      */
     public function test_is_instantiable(){
-        $this->assertInstanceOf('Alexpechkarev\Parcelforce\Parcelforce', $this->pf);
+        $this->assertInstanceOf('Parcelforce\ExpressTransfer\Parcelforce', $this->pf);
     }
     /***/
     
@@ -116,7 +116,7 @@ class ParcelforceTest extends TestCase{
     public function test_date_object_from_config(){
         $this->assertArrayHasKey('collectionDate', $this->config); 
         $this->assertNotNull($this->config['collectionDate']);
-        $this->assertClassHasAttribute("dateObj", 'Alexpechkarev\Parcelforce\Parcelforce');
+        $this->assertClassHasAttribute("dateObj", 'Parcelforce\ExpressTransfer\Parcelforce');
     }
     /***/
     
@@ -140,7 +140,7 @@ class ParcelforceTest extends TestCase{
 
         $header = implode($this->config['delimiterChar'], $this->config['header_record'])."\r\n";
        
-        $mock = m::mock('Alexpechkarev\Parcelforce\Parcelforce', $this->config);
+        $mock = m::mock('Parcelforce\ExpressTransfer\Parcelforce', $this->config);
         $mock->shouldReceive('getHeader')
                 ->once()
                 ->andReturn($this->pf->getHeader());
@@ -162,7 +162,7 @@ class ParcelforceTest extends TestCase{
         $this->config = $this->pf->getConfig();
         $footer = implode($this->config['delimiterChar'], $this->config['footer_record']);
         
-        $mock = m::mock('Alexpechkarev\Parcelforce\Parcelforce', $this->config);
+        $mock = m::mock('Parcelforce\ExpressTransfer\Parcelforce', $this->config);
         $mock->shouldReceive('getFooter')
                 ->once()
                 ->andReturn($this->pf->getFooter());

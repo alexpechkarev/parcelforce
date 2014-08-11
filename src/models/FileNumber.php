@@ -29,7 +29,7 @@
  *
  * @author Alexander Pechkarev <alexpechkarev@gmail.com>
  */
-namespace Alexpechkarev\Parcelforce\models;
+namespace Parcelforce\ExpressTransfer\models;
 
 use \Illuminate\Database\Eloquent\Model as Eloquent;
 

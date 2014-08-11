@@ -51,7 +51,7 @@ Once installed, register Laravel service provider, in your `app/config/app.php`:
 ```php
 'providers' => array(
 	...
-    'Alexpechkarev\Parcelforce\ParcelforceServiceProvider',
+    'Parcelforce\ExpressTransfer\ParcelforceServiceProvider',
 )
 ```
 
@@ -60,20 +60,20 @@ Publish configuration file:
 
 ```php
 
-php artisan config:publish alexpechkarev/parcelforce --path vendor/alexpechkarev/parcelforce/src/config/
+php artisan config:publish parcelforce/expresstransfer --path vendor/parcelforce/expresstransfer/src/config/
 
 ```
 
-Make files folder writable by web server
+Folder `files` must be writable by web server
 
 ```php
 
-chmod o+w app/config/packages/alexpechkarev/parcelforce/files
+chmod o+w app/config/packages/parcelforce/expresstransfer/files
 
 ```
 
 
-Testing
+Laravel PHPUnit Testing
 -------------
 
 Install Mockery 
@@ -83,9 +83,8 @@ composer require mockery/mockery:dev-master@dev
 
 Copy test and dataset file to app/tests
 ```
-cp vendor/alexpechkarev/parcelforce/tests/ParcelforceTest.txt app/tests/ParcelforceTest.php
+cp vendor/parcelforce/expresstransfer/tests/ParcelforceTest.txt app/tests/ParcelforceTest.php
 
-cp vendor/alexpechkarev/parcelforce/tests/setRecordResponse app/tests/
 
 phpunit app/tests/ParcelforceTest.php
 ```

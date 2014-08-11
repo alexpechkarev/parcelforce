@@ -1,4 +1,4 @@
-<?php namespace Alexpechkarev\Parcelforce;
+<?php namespace Parcelforce\ExpressTransfer;
 
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
@@ -34,8 +34,8 @@ class ParcelforceServiceProvider extends ServiceProvider {
          */                
          public function boot(){
             
-            $this->package("alexpechkarev/parcelforce");
-            AliasLoader::getInstance()->alias('Parcelforce','Alexpechkarev\Parcelforce\Facade\ParcelforceFacade');            
+            $this->package("parcelforce/expresstransfer");
+            AliasLoader::getInstance()->alias('Parcelforce','Parcelforce\ExpressTransfer\Facade\ParcelforceFacade');            
             
         }         
 

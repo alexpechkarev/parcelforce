@@ -32,7 +32,7 @@
 
 
 
-use Alexpechkarev\Parcelforce\PHP\Parcelforce;
+use Parcelforce\ExpressTransfer\PHP\Parcelforce;
 use Mockery as m;
 
 
@@ -86,7 +86,7 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
      * @test
      */
     public function test_is_instantiable(){
-        $this->assertInstanceOf('Alexpechkarev\Parcelforce\PHP\Parcelforce', $this->pf);
+        $this->assertInstanceOf('Parcelforce\ExpressTransfer\PHP\Parcelforce', $this->pf);
     }
     /***/
     
@@ -102,7 +102,7 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
     public function test_date_object_from_config(){
         $this->assertArrayHasKey('collectionDate', $this->config); 
         $this->assertNotNull($this->config['collectionDate']);
-        $this->assertClassHasAttribute("dateObj", 'Alexpechkarev\Parcelforce\PHP\Parcelforce');
+        $this->assertClassHasAttribute("dateObj", 'Parcelforce\ExpressTransfer\PHP\Parcelforce');
     }
     /***/
     
@@ -126,7 +126,7 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
         
         $header = implode($this->config['delimiterChar'], $this->config['header_record'])."\r\n";
        
-        $mock = m::mock('Alexpechkarev\Parcelforce\PHP\Parcelforce', $this->config);
+        $mock = m::mock('Parcelforce\ExpressTransfer\PHP\Parcelforce', $this->config);
         $mock->shouldReceive('getHeader')
                 ->once()
                 ->andReturn($this->pf->getHeader());
@@ -147,7 +147,7 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
         $this->config = $this->pf->getConfig();
         $footer = implode($this->config['delimiterChar'], $this->config['footer_record']);
         
-        $mock = m::mock('Alexpechkarev\Parcelforce\PHP\Parcelforce', $this->config);
+        $mock = m::mock('Parcelforce\ExpressTransfer\PHP\Parcelforce', $this->config);
         $mock->shouldReceive('getFooter')
                 ->once()
                 ->andReturn($this->pf->getFooter());

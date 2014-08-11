@@ -37,7 +37,7 @@
  * @author Alexander Pechkarev
  */
 
-namespace Alexpechkarev\Parcelforce\Facade;
+namespace Parcelforce\ExpressTransfer\Facade;
 
 use Illuminate\Support\Facades\Facade;
 
