@@ -1,7 +1,7 @@
 {
     "name": "parcelforce/exrpesstransfer",
-    "description": "Parcelforce expressTransfer API",
-    "keywords": ["Parcelforce", "Parcelforce expressTransfer", "Parcelforce API"],    
+    "description": "Package generates pre-advice electronic file that required by Parcelforce exrpessTransfer solution.",
+    "keywords": ["Parcelforce", "Parcelforce expressTransfer", "Parcelforce API", "pre-advice electronic file"],    
     "homepage": "https://github.com/alexpechkarev/parcelforce",
     "license": "MIT",
     "authors": [
