@@ -4,3 +4,4 @@ composer.lock
 .DS_Store
 /src/Alexpechkarev/Parcelforce/PHP/files
 
+/src/Parcelforce/ExpressTransfer/PHP/files/

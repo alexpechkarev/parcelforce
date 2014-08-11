@@ -22,7 +22,7 @@ class ParcelforceServiceProvider extends ServiceProvider {
 	{
             $this->app['Parcelforce'] = $this->app->share(function($app)
             {                    
-                return new Parcelforce(Config::get('parcelforce::config'));
+                return new Parcelforce(Config::get('expresstransfer::config'));
             }); 
 	}
         

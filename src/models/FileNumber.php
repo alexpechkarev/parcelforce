@@ -56,7 +56,7 @@ class FileNumber extends Eloquent {
         public function __construct(array $attributes = array()) {
             parent::__construct($attributes);
             
-            $this->table = \Config::get('parcelforce::config.filenum_table.tableName');
-            $this->fillable = array(\Config::get('parcelforce::config.filenum_table.fieldName'));
+            $this->table = \Config::get('expresstransfer::config.filenum_table.tableName');
+            $this->fillable = array(\Config::get('expresstransfer::config.filenum_table.fieldName'));
         }
 }

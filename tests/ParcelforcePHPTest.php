@@ -53,7 +53,7 @@ class ParcelforcePHPTest extends PHPUnit_Framework_TestCase{
         
         
         
-        $this->pf = new Parcelforce(include(__DIR__.'/../src/Alexpechkarev/Parcelforce/PHP/config.php'));
+        $this->pf = new Parcelforce(include(__DIR__.'/../src/Parcelforce/ExpressTransfer/PHP/config.php'));
         $this->config = $this->pf->getConfig();
         $this->senderData = array(
             array(

@@ -51,9 +51,8 @@ class ParcelforceTest extends TestCase{
      */
     public function setUp() {
         parent::setUp();
-        App::register('Parcelforce\ExpressTransfer\ParcelforceServiceProvider');
         
-        $this->pf = new Parcelforce(Config::get('parcelforce::config'));
+        $this->pf = new Parcelforce(Config::get('expresstransfer::config'));
         $this->config = $this->pf->getConfig();
         $this->senderData = array(
                     array(
