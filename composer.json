@@ -1,6 +1,7 @@
 {
-    "name": "alexpechkarev/parcelforce",
-    "description": "Parcelforce API",
+    "name": "parcelforce/exrpesstransfer",
+    "description": "Parcelforce expressTransfer API",
+    "keywords": ["geocoding", "google geocoding api", "laravel"],    
     "homepage": "https://github.com/alexpechkarev/parcelforce",
     "license": "MIT",
     "authors": [
