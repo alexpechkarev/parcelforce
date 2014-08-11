@@ -25,7 +25,7 @@ Requirements
 Must be [**Parcelforce**](http://www.parcelforce.com/account-customer/benefits-of-parcelforce-account) customer        
 PHP >= 5.3        
 MySQL        
-[**Laravel 4**](http://laravel.com/) >= 4.1 if used as Laravel package
+[**Laravel**](http://laravel.com/) >= 4.1 if used as Laravel package
 
 
 
