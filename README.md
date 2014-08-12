@@ -1,7 +1,6 @@
 Parcelforce expressTransfer API for Laravel 4
 ======================
-This package generates pre-advice electronic file that required by [**Parcelforce exrpessTransfer**]
-(http://www.parcelforce.com/) solution.
+[**Parcelforce exrpessTransfer**](http://www.parcelforce.com/)API for [**Laravel**](http://laravel.com/) to generate pre-advice electronic file that required by solution.
 
 [![Build Status](https://travis-ci.org/alexpechkarev/parcelforce.svg?branch=master)](https://travis-ci.org/alexpechkarev/parcelforce)
 
@@ -32,18 +31,17 @@ MySQL
 Installation
 ------------
 
-To install run following 
 ```sh
-    composer require alexpechkarev/parcelforce  dev-master
+composer require alexpechkarev/parcelforce  dev-master
 ```
 
 
 Configuration
 -------------
 
-Once installed, register Laravel service provider, in your `app/config/app.php`:
+Once installed, register Laravel service provider, in `app/config/app.php`:
 
-```sh
+```php
 'providers' => array(
 	...
     'Parcelforce\ExpressTransfer\ParcelforceServiceProvider',
@@ -56,12 +54,20 @@ Publish configuration file:
 php artisan config:publish parcelforce/expresstransfer --path vendor/alexpechkarev/parcelforce/src/config/
 ```
 
-Folder `files` must be writable by web server, all generated file will be stored here. 
-Name and location of this folder can be specified in the configuration file by editing `filePath` value, 
-if change ensure it's writable by we server.
-
+All generated file will be stored in `app/config/packages/parcelforce/expresstransfer/files` folder by default. 
+Ensure this folder writable by the web server:
 ```sh
 chmod o+w app/config/packages/parcelforce/expresstransfer/files
+```
+
+Name and location of this folder can be specified in the configuration file by editing `filePath` value, 
+if changed ensure it's writable by we server.
+
+```php
+    /**
+     * Location consignment files
+     */        
+    'filePath'                        => __DIR__.'/files/',
 ```
 
 
@@ -103,9 +109,12 @@ stored at `filePath` location and submitted to Parcelforce.
         );
 
         Parcelforce::process($senderData);
+
+        // generate file locally without submitting to Parcelforce
+        Parcelforce::process($senderData, FALSE);
 ```
 
-`Parcelforce::process($senderData)` return string, generated file content.
+
 
 Multiply consignment data can be submitted in single request.
 
@@ -138,10 +147,10 @@ This value can also be specified at runtime using `Parcelforce::setDate()` metho
     Parcelforce::setDate("next Monday");
     Parcelforce::process($senderData);
 ```
-In the package `date` handled using:
+Dates handled by:
  
- - [**Carbon**](https://github.com/briannesbitt/Carbon) extension for Laravel packages 
- - [**DateTime**](http://php.net/manual/en/book.datetime.php) class in PHP standalone class  
+ - [**Carbon**](https://github.com/briannesbitt/Carbon) in package for Laravel
+ - [**DateTime**](http://php.net/manual/en/book.datetime.php) in PHP standalone class  
 
 Following formats accepted by `setDate()` method:
 
@@ -166,12 +175,15 @@ PHP standalone class Usage
 -------------
 Location: 'Parcelforce\ExpressTransfer\PHP\'
 
-Standalone class have very similar methods as Laravel package and accepts consignment data in the same way.
+Standalone class have same methods as Laravel package and accepts consignment data in the same way.
 Before use please ensure that required parameters are set in configuration file 'Parcelforce/ExpressTransfer/PHP/config.php' and
 `Parcelforce/ExpressTransfer/PHP/files` folder is writable by web server.
 
 ```php
        $pf = new \Parcelforce\ExpressTransfer\PHP\Parcelforce();
+       $pf->process($senderData));
+       
+       // generate file locally without submitting to Parcelforce
        $pf->process($senderData));
 ```
 
@@ -196,9 +208,10 @@ To generate file locally simply pass `FALSE` as second parameter to `process()` 
     $pf->process($senderData, FALSE);
 ```
 
-Once testing and configuration completed file and consignment numbers have to be reset to default configuration values.
-To initiate reset call `reset()` method. Please note: `reset()` method will recreate database tables used to store file and consignment numbers.
-See `config.php` for table and fields names.
+Once testing and configuration completed file and consignment numbers have to be reset to initial values.
+To initiate process call `reset()` method. 
+Please note: `reset()` will reload database tables and all the data will be lost.
+See `config.php` for table details.
 ```php
     // In Laravel package
     Parcelforce::reset();
@@ -226,19 +239,53 @@ And then run test:
 phpunit app/tests/ParcelforceTest.php
 ```
 
-To test PHP standalone file use following command:
+To test PHP standalone file ensure database credentials are set in the config file.
 ```sh
     phpunit vendor/alexpechkarev/parcelforce/tests/ParcelforcePHPTest.php
 ```
 
+
+Main Methods
+-------------
+```php
+     /** 
+     * @param array $data - array of data
+     * @return string File content
+     */
+     public function process($data, $upload = TRUE)
+
+
+    /**
+     * Drop database tables
+     */
+    public function reset()
+
+
+
+    /**
+     * Get file content
+     * @return string
+     */
+     public function getFileContent()
+
+
+    /**
+     * Get current instance config file
+     * @return array
+     */
+    public function getConfig()
+```
+
+
+
 Support
--------
+-------------
 
 [Please open an issue on GitHub](https://github.com/alexpechkarev/parcelforce/issues)
 
 
 License
--------
+-------------
 
 Parcelforce expressTransfer API for Laravel 4 is released under the MIT License. See the bundled
 [LICENSE](https://github.com/alexpechkarev/parcelforce/blob/master/LICENSE)

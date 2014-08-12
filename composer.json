@@ -1,7 +1,7 @@
 {
     "name": "parcelforce/exrpesstransfer",
-    "description": "Package generates pre-advice electronic file that required by Parcelforce exrpessTransfer solution.",
-    "keywords": ["Parcelforce", "Parcelforce expressTransfer", "Parcelforce API", "pre-advice electronic file"],    
+    "description": "Parcelforce expressTransfer API for Laravel to generate pre-advice electronic file that required by solution.",
+    "keywords": ["Parcelforce expressTransfer API for Laravel", "Parcelforce expressTransfer", "Parcelforce API"],    
     "homepage": "https://github.com/alexpechkarev/parcelforce",
     "license": "MIT",
     "authors": [
